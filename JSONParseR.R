@@ -42,61 +42,78 @@ site <- list %>% as.tbl_json %>%
   enter_object("publisher") %>%
   spread_values(pubID = jstring("id"))
 
+
 bidreq <- list %>% as.tbl_json %>%
   enter_object("auction") %>%
   enter_object("bidrequests") %>%
   gather_array() %>%
-  spread_values(reqID1 = jstring("id"),
+  spread_values(reqID = jstring("id"),
                 vertical = jstring("verticalid"),
-                dsp = jstring("bidderid")) %>%
+                dsp = jstring("bidderid"))
+imp <- list %>% as.tbl_json %>%
+  enter_object("auction") %>%
+  enter_object("bidrequests") %>%
+  gather_array() %>%
+  spread_values(reqID = jstring("id")) %>%
   enter_object("impressions") %>%
   gather_array() %>%
   spread_values(bidfloor = jnumber("bidfloor"),
                 adformat = jstring("format"),
-                adproduct = jstring("product")) %>%
+                adproduct = jstring("product"))
+banner <- list %>% as.tbl_json %>%
+  enter_object("auction") %>%
+  enter_object("bidrequests") %>%
+  gather_array() %>%
+  spread_values(reqID = jstring("id")) %>%
+  enter_object("impressions") %>%
+  gather_array() %>%
   enter_object("banner") %>%
   spread_values(width = jnumber("w"),
                 height = jnumber("h"))
-bidreq <- bidreq %>%
-  filter(dsp != "35" & dsp != "37") %>%   # Filter out DSPs we should ignore
-  filter(adformat != "1" &   # Filter out Ad Formats we should ignore
-           adformat != "2" &
-           adformat != "3" &
-           adformat != "4" &
-           adformat != "6" &
-           adformat != "7" &
-           adformat != "20" &
-           adformat != "21" &
-           adformat != "22" & 
-           adformat != "25" & 
-           adformat != "26")
-
 bid <- list %>% as.tbl_json %>%
   enter_object("auction") %>%
   enter_object("bids") %>%
   gather_array %>%
-  spread_values(reqID2 = jstring("requestid"),
+  spread_values(reqID = jstring("requestid"),
                 winner = jstring("winner"))
 
-full <- bidreq %>%
-  left_join(auction, by="document.id") %>%
+bid <- bid %>%
+  mutate(winner = !is.na(winner))
+imp <- imp %>%
+  select(-document.id, -array.index)
+banner <- banner %>%
+  select(-document.id, -array.index)
+bid <- bid %>%
+  select(-document.id, -array.index)
+foo <- bidreq %>%
+  left_join(imp, by="reqID") %>%
+  left_join(banner, by="reqID") %>%
+  left_join(bid, by="reqID")
+full <- foo %>%
   left_join(event, by="document.id") %>%
+  left_join(auction, by="document.id") %>%
   left_join(site, by="document.id") %>%
-  left_join(bid, by="document.id")
-full <- as.data.frame(full)
-full <- full %>%   # Checking for bid request response and successful purchase
-  mutate(responded = reqID1==reqID2) %>%
-  mutate(realwinner = responded & winner == "TRUE") %>%
-  select(-winner)
-full[["realwinner"]][is.na(full[["realwinner"]])] <- 0
-full[["responded"]][is.na(full[["responded"]])] <- 0
+  rename(Auction=document.id, BidReq=array.index)
 full <- full %>%
-  select(-reqID1) %>%
-  select(-reqID2)
-full <- full %>%
-  mutate(responded = responded == 1) %>%
-  mutate(realwinner = realwinner == 1)
+  select(-reqID)
+full <- full[c("Auction","country","region","dayofweek","hour","month",
+                         "margin","tmax","bluekai","sitetype","sitecat","pubID",
+                         "BidReq","dsp","vertical",
+                         "bidfloor","adformat","adproduct","width","height","winner")]
 
+# bidreq <- bidreq %>%
+#   filter(dsp != "35" & dsp != "37") %>%   # Filter out DSPs we should ignore
+#   filter(adformat != "1" &   # Filter out Ad Formats we should ignore
+#            adformat != "2" &
+#            adformat != "3" &
+#            adformat != "4" &
+#            adformat != "6" &
+#            adformat != "7" &
+#            adformat != "20" &
+#            adformat != "21" &
+#            adformat != "22" & 
+#            adformat != "25" & 
+#            adformat != "26")
 
 # Makes dummy variables for better ML training
 # Breaks with too many observations
