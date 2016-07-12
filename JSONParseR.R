@@ -49,17 +49,13 @@ bidreq <- list %>% as.tbl_json %>%
   gather_array() %>%
   spread_values(reqID = jstring("id"),
                 vertical = jstring("verticalid"),
-                dsp = jstring("bidderid"))
-imp <- list %>% as.tbl_json %>%
-  enter_object("auction") %>%
-  enter_object("bidrequests") %>%
-  gather_array() %>%
-  spread_values(reqID = jstring("id")) %>%
+                dsp = jstring("bidderid")) %>%
   enter_object("impressions") %>%
   gather_array() %>%
   spread_values(bidfloor = jnumber("bidfloor"),
                 adformat = jstring("format"),
-                adproduct = jstring("product"))
+                adproduct = jstring("product"))   # array.index is impression ID
+                                                  # ignores bid reqs w/o impressions
 banner <- list %>% as.tbl_json %>%
   enter_object("auction") %>%
   enter_object("bidrequests") %>%
@@ -69,26 +65,24 @@ banner <- list %>% as.tbl_json %>%
   gather_array() %>%
   enter_object("banner") %>%
   spread_values(width = jnumber("w"),
-                height = jnumber("h"))
+                height = jnumber("h"))   # array.index is impression ID
+
 bid <- list %>% as.tbl_json %>%
   enter_object("auction") %>%
   enter_object("bids") %>%
   gather_array %>%
   spread_values(reqID = jstring("requestid"),
+                array.index = jstring("impid"),
                 winner = jstring("winner"))
-
 bid <- bid %>%
   mutate(winner = !is.na(winner))
-imp <- imp %>%
-  select(-document.id, -array.index)
 banner <- banner %>%
-  select(-document.id, -array.index)
+  select(-document.id)
 bid <- bid %>%
-  select(-document.id, -array.index)
+  select(-document.id)
 foo <- bidreq %>%
-  left_join(imp, by="reqID") %>%
-  left_join(banner, by="reqID") %>%
-  left_join(bid, by="reqID")
+  left_join(banner, by=c("reqID", "array.index")) %>%
+  left_join(bid, by=c("reqID", "array.index"))
 full <- foo %>%
   left_join(event, by="document.id") %>%
   left_join(auction, by="document.id") %>%
@@ -101,19 +95,19 @@ full <- full[c("Auction","country","region","dayofweek","hour","month",
                          "BidReq","dsp","vertical",
                          "bidfloor","adformat","adproduct","width","height","winner")]
 
-# bidreq <- bidreq %>%
-#   filter(dsp != "35" & dsp != "37") %>%   # Filter out DSPs we should ignore
-#   filter(adformat != "1" &   # Filter out Ad Formats we should ignore
-#            adformat != "2" &
-#            adformat != "3" &
-#            adformat != "4" &
-#            adformat != "6" &
-#            adformat != "7" &
-#            adformat != "20" &
-#            adformat != "21" &
-#            adformat != "22" & 
-#            adformat != "25" & 
-#            adformat != "26")
+filtered <- full %>%
+  filter(dsp != "35" & dsp != "37") %>%   # Filter out DSPs we should ignore
+  filter(adformat != "1" &   # Filter out Ad Formats we should ignore
+           adformat != "2" &
+           adformat != "3" &
+           adformat != "4" &
+           adformat != "6" &
+           adformat != "7" &
+           adformat != "20" &
+           adformat != "21" &
+           adformat != "22" & 
+           adformat != "25" & 
+           adformat != "26")
 
 # Makes dummy variables for better ML training
 # Breaks with too many observations
