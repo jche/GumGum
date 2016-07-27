@@ -54,7 +54,7 @@ if __name__ == "__main__":
     #param['eval_metric'] = 'error'
     evallist = [(dtest,'eval'), (dtrain,'train')]
 
-    num_round = 100   # Number of rounds of training
+    num_round = 100   # Number of rounds of training, increasing this increases the range of output values
     #bst = xgb.train(param, dtrain, num_round, evallist, feval=recall, maximize=True)
     bst = xgb.train(param, dtrain, num_round, evallist)
     bst.dump_model('dump.raw.txt')
