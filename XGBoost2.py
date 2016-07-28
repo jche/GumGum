@@ -65,7 +65,9 @@ if __name__ == "__main__":
 
     y_true = test_label
     y_pred = bst.predict(dtest)
-    for cutoff in range(1, 10):
+    rangeCutoffs = np.linspace(0.0001,1,10, endpoint = True)
+    #rangeCutoffs = range(1, 10)
+    for cutoff in rangeCutoffs:
         cut = cutoff/float(10)   # Cutoff, checking from .1 thru .9
         print "Cutoff is: %s" % cut
         y = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
