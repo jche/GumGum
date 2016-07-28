@@ -65,14 +65,19 @@ if __name__ == "__main__":
 
     y_true = test_label
     y_pred = bst.predict(dtest)
-    rangeCutoffs = np.linspace(0.0001,1,10, endpoint = True)
+    rangeCutoffs = np.linspace(0.0001,1,100,endpoint = True)
+    previous = 1
     #rangeCutoffs = range(1, 10)
     for cutoff in rangeCutoffs:
         cut = cutoff/float(10)   # Cutoff, checking from .1 thru .9
-        print "Cutoff is: %s" % cut
         y = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
-        print "Recall is: %s" % recall_score(y_true, y)
-        print confusion_matrix(y_true, y)
+        recalll = recall_score(y_true, y)
+        if recalll >=0.9395 | previous == 1:
+            print "Cutoff is: %s" % cut
+            print "Recall is: %s" % recall_score(y_true, y)
+            print confusion_matrix(y_true, y)
+        else:
+            previous = 0
 
     #xgb.plot_importance(bst, xlabel="test")
     #xgb.plot_tree(bst, num_trees=2)
