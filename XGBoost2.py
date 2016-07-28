@@ -39,9 +39,9 @@ def recall(preds, dtrain):
 
 if __name__ == "__main__":
     # Inputting training and testing set
-    train_data, train_label = format_data("/home/jche/Data/day_samp_bin_0604.npy")
+    train_data, train_label = format_data("/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_bin0604.npy")
     dtrain = xgb.DMatrix(train_data, label=train_label)
-    test_data, test_label = format_data("/home/jche/Data/day_samp_bin_0605.npy")
+    test_data, test_label = format_data("/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_bin0605.npy")
     dtest = xgb.DMatrix(test_data, label=test_label)
 
     # Setting parameters
@@ -61,7 +61,7 @@ if __name__ == "__main__":
                     num_round,
                     evallist,
                     early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
-    bst.dump_model('dump.raw2.txt')
+    bst.dump_model('/home/rmendoza/Desktop/dump.raw2.txt')
 
     y_true = test_label
     y_pred = bst.predict(dtest)
