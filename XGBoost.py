@@ -48,7 +48,7 @@ if __name__ == "__main__":
     param = {'booster':'gbtree',   # Tree, not linear regression
              'objective':'binary:logistic',   # Output probabilities
              'bst:max_depth':4,   # Max depth of tree
-             'bst:eta':.1,   # Learning rate (usually 0.01-0.2)
+             'bst:eta':.5,   # Learning rate (usually 0.01-0.2)
              'silent':0,   # 0 outputs messages, 1 does not
              'nthread':4}    # Number of cores used; otherwise, auto-detect
     #param['eval_metric'] = 'error'
@@ -56,17 +56,21 @@ if __name__ == "__main__":
 
     num_round = 100   # Number of rounds of training, increasing this increases the range of output values
     #bst = xgb.train(param, dtrain, num_round, evallist, feval=recall, maximize=True)
-    bst = xgb.train(param, dtrain, num_round, evallist)
+    bst = xgb.train(param,
+                    dtrain,
+                    num_round,
+                    evallist,
+                    early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
     bst.dump_model('dump.raw.txt')
 
     y_true = test_label
     y_pred = bst.predict(dtest)
-    print y_pred
-    for cutoff in range(0, 10):
-        cut = cutoff/float(10)
-        print "cut is: %s" % cut
-        y = np.greater(y_pred, np.zeros(len(y_true))+cut)
-        print recall_score(y_true, y)
+    for cutoff in range(1, 10):
+        cut = cutoff/float(10)   # Cutoff, checking from .1 thru .9
+        print "Cutoff is: %s" % cut
+        y = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
+        print "Recall is: %s" % recall_score(y_true, y)
+        print confusion_matrix(y_true, y)
 
     #xgb.plot_importance(bst, xlabel="test")
     #xgb.plot_tree(bst, num_trees=2)
