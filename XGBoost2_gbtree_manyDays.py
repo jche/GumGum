@@ -62,80 +62,80 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     return train_data, train_label
 
 if __name__ == "__main__":
+    with open("/home/rmendoza/Desktop/resultsXGB_1.txt", "w") as output_file:
+        wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
+        l = ['month','day','cutoff','recalll','filtered']
+        wr.writerow(l)
+        for diff in [1]:  #1,7  # as for now, only [1] means test on next day
+            for month in range(6,7): #5,7    # as for now, only range(6,7) means june
+                for day in range(4,8): #1,32  # as for now, only range(4,5) means 1st day
+                    print '------------------------------------------------'
+                    print '------------------------------------------------'
+                    print 'month = ', month,' and day = ',  day
+                    try:
+                        # Inputting training and testing set
+                        train_data, train_label = GetData(month, day)
+                        dtrain = xgb.DMatrix(train_data, label=train_label)
+                        test_data, test_label = GetData(month, day+diff)
+                        dtest = xgb.DMatrix(test_data, label=test_label)
 
-    for diff in [1]:  #1,7  # as for now, only [1] means test on next day
-        for month in range(6,7): #5,7    # as for now, only range(6,7) means june
-            for day in range(4,6): #1,32  # as for now, only range(4,5) means 1st day
-                print '------------------------------------------------'
-                print '------------------------------------------------'
-                print 'month = ', month,' and day = ',  day
-                try:
-                    # Inputting training and testing set
-                    train_data, train_label = GetData(month, day)
-                    dtrain = xgb.DMatrix(train_data, label=train_label)
-                    test_data, test_label = GetData(month, day+diff)
-                    dtest = xgb.DMatrix(test_data, label=test_label)
+                        # Setting parameters
+                        param = {'booster':'gbtree',#'gblinear',   # Tree, not linear regression
+                                 'objective':'binary:logistic',   # Output probabilities
+                                 'bst:max_depth': 4,   # Max depth of tree
+                                 'bst:eta':0.5,   # Learning rate (usually 0.01-0.2)
+                                 'silent':1,   # 0 outputs messages, 1 does not
+                                 'nthread':4}    # Number of cores used; otherwise, auto-detect
+                        #param['eval_metric'] = 'error'
+                        evallist = [(dtest,'eval'), (dtrain,'train')]
 
-                    # Setting parameters
-                    param = {'booster':'gbtree',#'gblinear',   # Tree, not linear regression
-                             'objective':'binary:logistic',   # Output probabilities
-                             'bst:max_depth': 4,   # Max depth of tree
-                             'bst:eta':0.5,   # Learning rate (usually 0.01-0.2)
-                             'silent':1,   # 0 outputs messages, 1 does not
-                             'nthread':4}    # Number of cores used; otherwise, auto-detect
-                    #param['eval_metric'] = 'error'
-                    evallist = [(dtest,'eval'), (dtrain,'train')]
+                        num_round = 100   # Number of rounds of training, increasing this increases the range of output values
+                        #bst = xgb.train(param, dtrain, num_round, evallist, feval=recall, maximize=True)
+                        bst = xgb.train(param,
+                                        dtrain,
+                                        num_round,
+                                        evallist,
+                                        early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
+                        bst.dump_model('/home/rmendoza/Desktop/dump.raw2.txt')
 
-                    num_round = 100   # Number of rounds of training, increasing this increases the range of output values
-                    #bst = xgb.train(param, dtrain, num_round, evallist, feval=recall, maximize=True)
-                    bst = xgb.train(param,
-                                    dtrain,
-                                    num_round,
-                                    evallist,
-                                    early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
-                    bst.dump_model('/home/rmendoza/Desktop/dump.raw2.txt')
-
-                    y_true = test_label
-                    y_pred = bst.predict(dtest)
-                    a = 0.0001
-                    b = 0.5
-                    rangeCutoffs = np.linspace(a,b,100,endpoint = True)
-                    previous = 1
-                    #rangeCutoffs = range(1, 10)
-                    recCutoff = 0.94
-                    for cutoff in rangeCutoffs:
-                        cut = cutoff/float(10)   # Cutoff, checking from .1 thru .9
-                        ypred = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
-                        recalll = recall_score(y_true, ypred)
-                        if recalll >=recCutoff or previous == 1:
-                            cf = confusion_matrix(y_true,ypred)
-                            n = len(y_true)
-                            #filtered = (cf[0,0]+cf[1,0])/float(n)
-                            filtered = (cf[0,0])/float(n)
-                            if filtered >= 0.35:
-                                print "Cutoff is: %s" % cut
-                                print "Recall is: %s" % recalll
-                                print 'Filtering is = ', filtered
-                                print cf
-                            #else:
-                                #print 'Bad recall, not worth reporting'
-                            if recalll < recCutoff:
-                                previous = 0
+                        y_true = test_label
+                        y_pred = bst.predict(dtest)
+                        a = 0.0001
+                        b = 0.5
+                        rangeCutoffs = np.linspace(a,b,100,endpoint = True)
+                        previous = 1
+                        #rangeCutoffs = range(1, 10)
+                        recCutoff = 0.94
+                        for cutoff in rangeCutoffs:
+                            cut = cutoff/float(10)   # Cutoff, checking from .1 thru .9
+                            ypred = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
+                            recalll = recall_score(y_true, ypred)
+                            if recalll >=recCutoff or previous == 1:
+                                cf = confusion_matrix(y_true,ypred)
+                                n = len(y_true)
+                                #filtered = (cf[0,0]+cf[1,0])/float(n)
+                                filtered = (cf[0,0])/float(n)
+                                if filtered >= 0.35:
+                                    print "Cutoff is: %s" % cut
+                                    print "Recall is: %s" % recalll
+                                    print 'Filtering is = ', filtered
+                                    print cf
+                                    l = [month,day,cutoff,recalll,filtered]
+                                    wr.writerow(l)
+                                #else:
+                                    #print 'Bad recall, not worth reporting'
+                                if recalll < recCutoff:
+                                    previous = 0
+                                else:
+                                    previous = 1
                             else:
-                                previous = 1
-                        else:
-                            previous = 0
-
-                    #xgb.plot_importance(bst, xlabel="test")
-                    #xgb.plot_tree(bst, num_trees=2)
-                    with open("/home/rmendoza/Desktop/resultsXGB_1.txt", "w") as output_file:
-                        wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
+                                previous = 0
+                        #xgb.plot_importance(bst, xlabel="test")
+                        #xgb.plot_tree(bst, num_trees=2)
                         #wr = csv.writer(f,delimiter="\n")
-                        l = [month,day,cutoff,recalll,filtered]
-                        wr.writerow(l)
 
-                except:
-                    pass
-                    print 'failure, no such day'
-                print '_____________________________________________________________________'
-                print '_____________________________________________________________________'
+                    except:
+                        pass
+                        print 'failure, no such day'
+                    print '_____________________________________________________________________'
+                    print '_____________________________________________________________________'
