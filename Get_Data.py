@@ -66,21 +66,46 @@ def select_features(matrix, features_to_get):
 # with the specified ratio of positive responses and negative responses,
 # and return the feature matrix X and the corresponding response vector y
 # The ratio is given by pos/neg
-def get(addr_day, ratio=-1, features_to_get=None):
+
+def get(addr_day, cluster_number = -1, ratio=-1, features_to_get=None):
+    '''
+     With a given address of the day to take random sample from,
+     obtain a numpy matrix that contain 100,000 impressions,
+     with the specified ratio of positive responses and negative responses,
+     and return the feature matrix X and the corresponding response vector y
+     The ratio is given by pos/neg
+    :param addr_day: e.g. "/mnt/rips2/2016/05/01"
+    :param cluster_number: -1 by default. Can take values in range(4)
+    :param ratio:  -1 by default. Ratio of pos to neg examples
+    :param features_to_get:
+    :return: X, y. Outputted features and labels
+    '''
     if ratio != -1:
         n = 100000
         neg = int(n / (1+ratio))
         pos = n - neg
+        if cluster_number != -1:
+            with open(os.path.join(addr_day, "day_samp_bin_neg_" + str(cluster_number) + ".npz"), "r") as file_neg:
+                matrix_neg = smio.load_sparse_csr(file_neg)
+                print "Negative Cluster %s Loaded" % cluster_number
+            matrix_neg = matrix_neg[:, :]
+            with open(os.path.join(addr_day, "day_samp_bin_pos_" + str(cluster_number) + ".npz"), "r") as file_pos:
+                matrix_pos = smio.load_sparse_csr(file_pos)
+                print "Positive Cluster %s Loaded" % cluster_number
+            matrix_pos = matrix_pos[:, :]
+            # I cannot guarantee what size the clustered data samples might be, so have avoided the ratio part.
+            matrix = vstack((matrix_neg, matrix_pos))
+            np.random.shuffle(matrix)
+        else:
+            with open(os.path.join(addr_day, "day_samp_bin_neg.npy"), "r") as file_neg:
+                matrix_neg = smio.load_sparse_csr(file_neg)
+            matrix_neg = matrix_neg[:neg, :]
+            with open(os.path.join(addr_day, "day_samp_bin_pos.npy"), "r") as file_pos:
+                matrix_pos = smio.load_sparse_csr(file_pos)
+            matrix_pos = matrix_pos[:pos, :]
 
-        with open(os.path.join(addr_day, "day_samp_bin_neg.npy"), "r") as file_neg:
-            matrix_neg = smio.load_sparse_csr(file_neg)
-        matrix_neg = matrix_neg[:neg, :]
-        with open(os.path.join(addr_day, "day_samp_bin_pos.npy"), "r") as file_pos:
-            matrix_pos = smio.load_sparse_csr(file_pos)
-        matrix_pos = matrix_pos[:pos, :]
-
-        matrix = vstack((matrix_neg, matrix_pos))
-        np.random.shuffle(matrix)
+            matrix = vstack((matrix_neg, matrix_pos))
+            np.random.shuffle(matrix)
     else:
         with open(os.path.join(addr_day, "day_samp_bin.npy"), "r") as file_in:
             matrix = smio.load_sparse_csr(file_in)

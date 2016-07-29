@@ -10,4 +10,3 @@ def save_sparse_csr(filename, array):
 def load_sparse_csr(filename):
     loader = np.load(filename)
     return csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape']).toarray()
-
