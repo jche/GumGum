@@ -70,12 +70,22 @@ if __name__ == "__main__":
     #rangeCutoffs = range(1, 10)
     for cutoff in rangeCutoffs:
         cut = cutoff/float(10)   # Cutoff, checking from .1 thru .9
-        y = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
-        recalll = recall_score(y_true, y)
-        if recalll >=0.9395 | previous == 1:
-            print "Cutoff is: %s" % cut
-            print "Recall is: %s" % recall_score(y_true, y)
-            print confusion_matrix(y_true, y)
+        ypred = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
+        recalll = recall_score(y_true, ypred)
+        if recalll >=0.95 or previous == 1:
+            cf = confusion_matrix(y_true,ypred)
+            n = len(y_true)
+            #filtered = (cf[0,0]+cf[1,0])/float(n)
+            filtered = (cf[0,0])/float(n)
+            if filtered >= 0.35:
+                print "Cutoff is: %s" % cut
+                print "Recall is: %s" % recalll
+                print 'Filtering is = ', filtered
+                print cf
+            #else:
+                #print 'Bad recall, not worth reporting'
+            if recalll < 0.9395:
+                previous = 0
         else:
             previous = 0
 
