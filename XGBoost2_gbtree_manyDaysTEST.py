@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.metrics import confusion_matrix, recall_score
 import os
+import csv
 import operator
 import pandas as pd
 from matplotlib import pylab as plt
@@ -48,7 +49,8 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     p0 = "0" + str(month)
     p1 = str(day).rjust(2,'0')
     #dataroot = os.path.join(root,p0,p1,"day_samp_bin.npy")  # for AWS
-    binName = 'day_samp_bin'+p0+p1+'.npy'  #for local maschine
+    #binName = 'day_samp_bin'+p0+p1+'.npy'  #for local maschine #old data
+    binName = 'day_samp_new_'+p0+p1+'.npy'## New data
     dataroot = os.path.join(root,binName)   #for local maschine
     print "Reading Data..."
     train_data, train_label = format_data(dataroot)
@@ -60,10 +62,13 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     return train_data, train_label
 
 if __name__ == "__main__":
-    for diff in [1]:  #1,7
-        for month in range(6,7): #5,7
-            for day in range(4,5): #1,32
-                print 'month = ', month,' and day = '  day
+
+    for diff in [1]:  #1,7  # as for now, only [1] means test on next day
+        for month in range(6,7): #5,7    # as for now, only range(6,7) means june
+            for day in range(4,6): #1,32  # as for now, only range(4,5) means 1st day
+                print '------------------------------------------------'
+                print '------------------------------------------------'
+                print 'month = ', month,' and day = ',  day
                 try:
                     # Inputting training and testing set
                     train_data, train_label = GetData(month, day)
@@ -123,5 +128,14 @@ if __name__ == "__main__":
 
                     #xgb.plot_importance(bst, xlabel="test")
                     #xgb.plot_tree(bst, num_trees=2)
+                    with open("/home/rmendoza/Desktop/resultsXGB_1.txt", "w") as output_file:
+                        wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
+                        #wr = csv.writer(f,delimiter="\n")
+                        l = [month,day,cutoff,recalll,filtered]
+                        wr.writerow(l)
+
                 except:
                     pass
+                    print 'failure, no such day'
+                print '_____________________________________________________________________'
+                print '_____________________________________________________________________'
