@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 print cf
             #else:
                 #print 'Bad recall, not worth reporting'
-            if recalll < 0.9395:
+            if recalll < 0.95:
                 previous = 0
         else:
             previous = 0
