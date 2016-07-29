@@ -62,13 +62,13 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     return train_data, train_label
 
 if __name__ == "__main__":
-    with open("/home/rmendoza/Desktop/resultsXGB_1.txt", "w") as output_file:
+    with open("/home/rmendoza/Desktop/resultsXGB_1.odt", "w") as output_file:
         wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
         l = ['month','day','cutoff','recalll','filtered']
         wr.writerow(l)
         for diff in [1]:  #1,7  # as for now, only [1] means test on next day
             for month in range(6,7): #5,7    # as for now, only range(6,7) means june
-                for day in range(4,8): #1,32  # as for now, only range(4,5) means 1st day
+                for day in range(4,7): #1,32  # as for now, only range(4,5) means 1st day
                     print '------------------------------------------------'
                     print '------------------------------------------------'
                     print 'month = ', month,' and day = ',  day
