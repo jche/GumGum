@@ -86,10 +86,12 @@ def get(addr_day, cluster_number = -1, ratio=-1, features_to_get=None):
         pos = n - neg
         if cluster_number != -1:
             with open(os.path.join(addr_day, "day_samp_bin_neg_" + str(cluster_number) + ".npz"), "r") as file_neg:
-                matrix_neg = smio.load_sparse_csr(file_neg)
+                matrix_neg = smio.load_sparse_csr_npz(file_neg)
+                print "Negative Cluster %s Loaded" % cluster_number
             matrix_neg = matrix_neg[:, :]
             with open(os.path.join(addr_day, "day_samp_bin_pos_" + str(cluster_number) + ".npz"), "r") as file_pos:
-                matrix_pos = smio.load_sparse_csr(file_pos)
+                matrix_pos = smio.load_sparse_csr_npz(file_pos)
+                print "Positive Cluster %s Loaded" % cluster_number
             matrix_pos = matrix_pos[:, :]
             # I cannot guarantee what size the clustered data samples might be, so have avoided the ratio part.
             matrix = vstack((matrix_neg, matrix_pos))
