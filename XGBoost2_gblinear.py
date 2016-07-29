@@ -47,8 +47,8 @@ if __name__ == "__main__":
     # Setting parameters
     param = {'booster':'gblinear',#'gbtree',   # Tree, not linear regression
              'objective':'binary:logistic',   # Output probabilities
-             'bst:max_depth':10,   # Max depth of tree
-             'bst:eta':0.5,   # Learning rate (usually 0.01-0.2)
+             'bst:max_depth':8,   # Max depth of tree
+             'bst:eta':0.1,   # Learning rate (usually 0.01-0.2)
              'silent':1,   # 0 outputs messages, 1 does not
              'nthread':4}    # Number of cores used; otherwise, auto-detect
     #param['eval_metric'] = 'error'
@@ -60,13 +60,13 @@ if __name__ == "__main__":
                     dtrain,
                     num_round,
                     evallist,
-                    early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
+                    early_stopping_rounds=100)   # If error doesn't decrease in n rounds, stop early
     bst.dump_model('/home/rmendoza/Desktop/dump.raw2.txt')
 
     y_true = test_label
     y_pred = bst.predict(dtest)
     a = 0.0001
-    b = 20
+    b = 5
     rangeCutoffs = np.linspace(a,b,100,endpoint = True)
     previous = 1
     #rangeCutoffs = range(1, 10)
@@ -88,6 +88,8 @@ if __name__ == "__main__":
                 #print 'Bad recall, not worth reporting'
             if recalll < 0.95:
                 previous = 0
+            else:
+                previous = 1
         else:
             previous = 0
 

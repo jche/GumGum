@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Setting parameters
     param = {'booster':'gbtree',#'gblinear',   # Tree, not linear regression
              'objective':'binary:logistic',   # Output probabilities
-             'bst:max_depth':10,   # Max depth of tree
+             'bst:max_depth': 4,   # Max depth of tree
              'bst:eta':0.5,   # Learning rate (usually 0.01-0.2)
              'silent':1,   # 0 outputs messages, 1 does not
              'nthread':4}    # Number of cores used; otherwise, auto-detect
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     y_true = test_label
     y_pred = bst.predict(dtest)
     a = 0.0001
-    b = 20
+    b = 0.5
     rangeCutoffs = np.linspace(a,b,100,endpoint = True)
     previous = 1
     #rangeCutoffs = range(1, 10)
@@ -88,6 +88,8 @@ if __name__ == "__main__":
                 #print 'Bad recall, not worth reporting'
             if recalll < 0.95:
                 previous = 0
+            else:
+                previous = 1
         else:
             previous = 0
 
