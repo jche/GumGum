@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Setting parameters
     param = {'booster':'gbtree',   # Tree, not linear regression
              'objective':'binary:logistic',   # Output probabilities
-             'bst:max_depth':4,   # Max depth of tree
+             'bst:max_depth':10,   # Max depth of tree
              'bst:eta':.5,   # Learning rate (usually 0.01-0.2)
              'silent':0,   # 0 outputs messages, 1 does not
              'nthread':4}    # Number of cores used; otherwise, auto-detect
