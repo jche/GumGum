@@ -78,7 +78,7 @@ if __name__ == "__main__":
                          subsample=0.8,
                          colsample_bytree=0.8,
                          objective= 'binary:logistic',
-                         nthread=8,   # used to be 4
+                         nthread=6,   # used to be 4
                          scale_pos_weight=5,   # used to be 1
                          seed=20)
     modelfit(xgb1, train_data, train_label)
