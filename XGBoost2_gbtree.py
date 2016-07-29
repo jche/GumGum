@@ -45,7 +45,7 @@ if __name__ == "__main__":
     dtest = xgb.DMatrix(test_data, label=test_label)
 
     # Setting parameters
-    param = {'booster':'gblinear',#'gbtree',   # Tree, not linear regression
+    param = {'booster':'gbtree',#'gblinear',   # Tree, not linear regression
              'objective':'binary:logistic',   # Output probabilities
              'bst:max_depth':10,   # Max depth of tree
              'bst:eta':0.5,   # Learning rate (usually 0.01-0.2)
