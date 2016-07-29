@@ -39,17 +39,17 @@ def recall(preds, dtrain):
 
 if __name__ == "__main__":
     # Inputting training and testing set
-    train_data, train_label = format_data("/home/jche/Data/day_samp_bin_0604.npy")
+    train_data, train_label = format_data("/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_bin0604.npy")
     dtrain = xgb.DMatrix(train_data, label=train_label)
-    test_data, test_label = format_data("/home/jche/Data/day_samp_bin_0605.npy")
+    test_data, test_label = format_data("/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_bin0605.npy")
     dtest = xgb.DMatrix(test_data, label=test_label)
 
     # Setting parameters
-    param = {'booster':'gbtree',   # Tree, not linear regression
+    param = {'booster':'gblinear',#'gbtree',   # Tree, not linear regression
              'objective':'binary:logistic',   # Output probabilities
-             'bst:max_depth':4,   # Max depth of tree
-             'bst:eta':.5,   # Learning rate (usually 0.01-0.2)
-             'silent':0,   # 0 outputs messages, 1 does not
+             'bst:max_depth':10,   # Max depth of tree
+             'bst:eta':0.5,   # Learning rate (usually 0.01-0.2)
+             'silent':1,   # 0 outputs messages, 1 does not
              'nthread':4}    # Number of cores used; otherwise, auto-detect
     #param['eval_metric'] = 'error'
     evallist = [(dtest,'eval'), (dtrain,'train')]
@@ -61,16 +61,35 @@ if __name__ == "__main__":
                     num_round,
                     evallist,
                     early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
-    bst.dump_model('dump.raw.txt')
+    bst.dump_model('/home/rmendoza/Desktop/dump.raw2.txt')
 
     y_true = test_label
     y_pred = bst.predict(dtest)
-    for cutoff in range(1, 10):
+    a = 0.0001
+    b = 20
+    rangeCutoffs = np.linspace(a,b,100,endpoint = True)
+    previous = 1
+    #rangeCutoffs = range(1, 10)
+    for cutoff in rangeCutoffs:
         cut = cutoff/float(10)   # Cutoff, checking from .1 thru .9
-        print "Cutoff is: %s" % cut
-        y = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
-        print "Recall is: %s" % recall_score(y_true, y)
-        print confusion_matrix(y_true, y)
+        ypred = np.greater(y_pred, np.zeros(len(y_true))+cut)   # If y values are greater than the cutoff
+        recalll = recall_score(y_true, ypred)
+        if recalll >=0.95 or previous == 1:
+            cf = confusion_matrix(y_true,ypred)
+            n = len(y_true)
+            #filtered = (cf[0,0]+cf[1,0])/float(n)
+            filtered = (cf[0,0])/float(n)
+            if filtered >= 0.35:
+                print "Cutoff is: %s" % cut
+                print "Recall is: %s" % recalll
+                print 'Filtering is = ', filtered
+                print cf
+            #else:
+                #print 'Bad recall, not worth reporting'
+            if recalll < 0.95:
+                previous = 0
+        else:
+            previous = 0
 
     #xgb.plot_importance(bst, xlabel="test")
     #xgb.plot_tree(bst, num_trees=2)
