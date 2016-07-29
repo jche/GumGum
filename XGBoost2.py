@@ -45,11 +45,11 @@ if __name__ == "__main__":
     dtest = xgb.DMatrix(test_data, label=test_label)
 
     # Setting parameters
-    param = {'booster':'gbtree',   # Tree, not linear regression
+    param = {'booster':'gblinear',#'gbtree',   # Tree, not linear regression
              'objective':'binary:logistic',   # Output probabilities
-             'bst:max_depth':10,   # Max depth of tree
-             'bst:eta':.5,   # Learning rate (usually 0.01-0.2)
-             'silent':0,   # 0 outputs messages, 1 does not
+             'bst:max_depth':5,   # Max depth of tree
+             'bst:eta':0.5,   # Learning rate (usually 0.01-0.2)
+             'silent':1,   # 0 outputs messages, 1 does not
              'nthread':4}    # Number of cores used; otherwise, auto-detect
     #param['eval_metric'] = 'error'
     evallist = [(dtest,'eval'), (dtrain,'train')]
