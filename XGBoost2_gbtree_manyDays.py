@@ -2,6 +2,7 @@ import xgboost as xgb
 import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.metrics import confusion_matrix, recall_score
+import os
 import operator
 import pandas as pd
 from matplotlib import pylab as plt
@@ -36,6 +37,26 @@ def recall(preds, dtrain):
     preds_bin = np.greater(preds, np.zeros(len(labels))+cutoff)
     return "recall", recall_score(labels, preds_bin)
 
+def GetData(month, day): ## Input Weiyi-formatted Data
+    """
+    Takes the data from a given day/month and outputs a numpy array
+    :param month:
+    :param day:
+    :return:
+    """
+    #root = "/mnt/rips2/2016"  #for AWS
+    root = "/home/rmendoza/Documents/Data/DataXGB_jul28"  #for local maschine
+    p0 = "0" + str(month)
+    p1 = str(day).rjust(2,'0')
+    #data = os.path.join(root,p0,p1,"day_samp_bin.npy")  # for AWS
+    binName = 'day_samp_bin'+p0+p1  #for local maschine
+    data = os.path.join(root,binName)   #for local maschine
+    print "Reading Data..."
+    temp = np.load(data)
+    Data = csr_matrix((  temp['data'], temp['indices'], temp['indptr']),
+                         shape = temp['shape'], dtype=float).toarray()
+    print "Finished reading data file"
+    return Data
 
 if __name__ == "__main__":
     # Inputting training and testing set
