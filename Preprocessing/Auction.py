@@ -60,7 +60,7 @@ def process(entry, result):
             else:
                 result_tmp[4] = 1
             result.extend(result_tmp)
-            result.append(0)
+        result.append(0)
     else:
         result.extend([0]*85)
         result.append(1)    # Use the last column to indicate missing tmax
@@ -76,8 +76,8 @@ def process(entry, result):
             try:
                 index = bkcids_.index(item)
             except:
-                index = len(bkcids_)-1
+                index = len(bkc_result)-2
             bkc_result[index] = 1
-        result.extend(bkc_result)
+    result.extend(bkc_result)
 
     return margin
