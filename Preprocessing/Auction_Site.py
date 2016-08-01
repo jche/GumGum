@@ -9,8 +9,9 @@ def process(entry, result):
     # Auction - Site - typeid
     if entry["typeid"] == -1:
         result.extend([0]*3)
+        result.append(1)    # Use the last column to indicate missing site object
     else:
-        sd.binarize(result, entry["typeid"]-1, 3)
+        sd.binarize(result, entry["typeid"]-1, 4)
 
     # Auction - Site - cat
     # Auction - Site - pcat
@@ -31,11 +32,14 @@ def process(entry, result):
 
 
 def cat_process(result, site, var):
-    cats = [0]*26  # Parse 26 different types of IAB categories
-    for cat in site[var]:
-        if "IAB" in cat:
-            cat_int = IAB_parser(cat)
-            cats[cat_int-1] = 1
+    cats = [0]*27  # Parse 26 different types of IAB categories
+    if len(site[var]) == 0:
+        cats[len(cats)-1] = 1
+    else:
+        for cat in site[var]:
+            if "IAB" in cat:
+                cat_int = IAB_parser(cat)
+                cats[cat_int-1] = 1
     result.extend(cats)
 
 

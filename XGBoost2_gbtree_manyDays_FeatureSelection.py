@@ -2,13 +2,21 @@ import xgboost as xgb
 import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.metrics import confusion_matrix, recall_score
+from sklearn.metrics import roc_auc_score
 import os
 import csv
+from sklearn import cross_validation
 import operator
 import pandas as pd
 from matplotlib import pylab as plt
 from sklearn.preprocessing import LabelEncoder
 
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_classif
+import time
+
+# Feature Selection source:
+## https://www.kaggle.com/sureshshanmugam/santander-customer-satisfaction/xgboost-with-feature-selection/code
 
 # XGBoost 101 found at http://xgboost.readthedocs.io/en/latest/python/python_intro.html
 
@@ -68,16 +76,63 @@ if __name__ == "__main__":
         wr.writerow(l)
         for diff in [1]:  #1,7  # as for now, only [1] means test on next day
             for month in range(6,7): #5,7    # as for now, only range(6,7) means june
-                for day in range(4,26): #1,32  # as for now, only range(4,5) means 1st day
+                for day in range(4,6): #1,32  # as for now, only range(4,5) means 1st day
                     print '------------------------------------------------'
                     print '------------------------------------------------'
                     print 'month = ', month,' and day = ',  day
                     try:
                         # Inputting training and testing set
-                        train_data, train_label = GetData(month, day)
-                        dtrain = xgb.DMatrix(train_data, label=train_label)
+                        #train_data, train_label = GetData(month, day)
+                        X, y = GetData(month, day)
+                        #dtrain = xgb.DMatrix(train_data, label=train_label)
+                        dtrain = xgb.DMatrix(X, label=y)
                         test_data, test_label = GetData(month, day+diff)
                         dtest = xgb.DMatrix(test_data, label=test_label)
+
+                        print 'selectKbest(f_classif, k =360) .....'
+                        selectK = SelectKBest(f_classif, k=360)
+                        print 'selectK.fit(X, y) ...'
+                        selectK.fit(X, y)
+                        print 'selectK.transform(X) ...'
+                        X_sel = selectK.transform(X)
+                        print 'X.columns[selectK.get_support()] ...'
+                        features = X.columns[selectK.get_support()]
+                        print 'features', (features)
+                        print 'brief pause'
+                        time.sleep(20)  #sleep
+
+                        ### Clean these chunk of code to be able to train/test
+
+                        X_train, X_test, y_train, y_test = cross_validation.train_test_split(X_sel, y, random_state=1301, stratify=y, test_size=0.3)
+                        clf = xgb.XGBClassifier(max_depth = 5,
+                                                n_estimators=1525,
+                                                learning_rate=0.02,
+                                                nthread=4,
+                                                subsample=0.95,
+                                                colsample_bytree=0.85,
+                                                seed=4242)
+                        clf.fit(X_train, y_train, early_stopping_rounds=50, eval_metric="logloss", eval_set=[(X_test, y_test)])
+                        ###  Clean also these
+                        print('Overall AUC:', roc_auc_score(y, clf.predict_proba(X_sel)[:,1]))
+                        # ojo... test venía de aquí... # test = pd.read_csv("../input/test.csv", index_col=0)
+                        sel_test = selectK.transform(test)
+                        y_pred = clf.predict_proba(sel_test)
+
+                        submission = pd.DataFrame({"ID":test.index, "TARGET":y_pred[:,1]})
+                        submission.to_csv("submission.csv", index=False)
+
+                        mapFeat = dict(zip(["f"+str(i) for i in range(len(features))],features))
+                        ts = pd.Series(clf.booster().get_fscore())
+                        ts.index = ts.reset_index()['index'].map(mapFeat)
+                        ts.sort_values()[-15:].plot(kind="barh", title=("features importance"))
+
+                        featp = ts.sort_values()[-15:].plot(kind='barh', x='feature', y='fscore', legend=False, figsize=(6, 10))
+                        plt.title('XGBoost Feature Importance')
+                        fig_featp = featp.get_figure()
+                        fig_featp.savefig('feature_importance_xgb.png', bbox_inches='tight', pad_inches=1)
+
+
+                        #### OLD CODE: ...
 
                         # Setting parameters
                         param = {'booster':'gbtree',#'gblinear',   # Tree, not linear regression
@@ -136,6 +191,6 @@ if __name__ == "__main__":
 
                     except:
                         pass
-                        print 'failure, no such day'
+                        print 'Failure x-P, something crashed.'
                     print '_____________________________________________________________________'
                     print '_____________________________________________________________________'
