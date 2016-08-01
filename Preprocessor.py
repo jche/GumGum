@@ -11,14 +11,14 @@ start = time.time()
 
 
 def get_io_addr_day_samp():
-    may = [(5, i) for i in range(1, 2)]
-    # may = []
-    # june = [(6, i) for i in range(5, 6)]
-    june = []
+    # may = [(5, i) for i in range(1, 8)]
+    may = []
+    june = [(6, i) for i in range(4, 6)]
+    # june = []
 
     root = "/home/wlu/Desktop/rips16"
     filename_in = "day_samp_raw"
-    filename_out = "day_samp_new.npy"
+    filename_out = "day_samp_new_bin.npy"
 
     list_io_addr = []
     for item in may+june:
@@ -63,7 +63,7 @@ def crawl(io_addr):
                 # try:
                 entry = json.loads(line)
                 result = []
-                Driver.process(entry, result, "bin")
+                Driver.process(entry, result)
                 data_sparse_list.append(csr_matrix(result))
 
                 # except:
