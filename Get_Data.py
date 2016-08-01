@@ -85,11 +85,11 @@ def get(addr_day, cluster_number = -1, ratio=-1, features_to_get=None):
         neg = int(n / (1+ratio))
         pos = n - neg
         if cluster_number != -1:
-            with open(os.path.join(addr_day, "day_samp_bin_neg_" + str(cluster_number) + ".npz"), "r") as file_neg:
+            with open(os.path.join(addr_day, "day_samp_new_neg_" + str(cluster_number) + ".npz"), "r") as file_neg:
                 matrix_neg = smio.load_sparse_csr(file_neg)
                 print "Negative Cluster %s Loaded" % cluster_number
             matrix_neg = matrix_neg[:, :]
-            with open(os.path.join(addr_day, "day_samp_bin_pos_" + str(cluster_number) + ".npz"), "r") as file_pos:
+            with open(os.path.join(addr_day, "day_samp_new_pos_" + str(cluster_number) + ".npz"), "r") as file_pos:
                 matrix_pos = smio.load_sparse_csr(file_pos)
                 print "Positive Cluster %s Loaded" % cluster_number
             matrix_pos = matrix_pos[:, :]
@@ -97,17 +97,17 @@ def get(addr_day, cluster_number = -1, ratio=-1, features_to_get=None):
             matrix = vstack((matrix_neg, matrix_pos))
             np.random.shuffle(matrix)
         else:
-            with open(os.path.join(addr_day, "day_samp_bin_neg.npy"), "r") as file_neg:
+            with open(os.path.join(addr_day, "day_samp_new_neg.npy"), "r") as file_neg:
                 matrix_neg = smio.load_sparse_csr(file_neg)
             matrix_neg = matrix_neg[:neg, :]
-            with open(os.path.join(addr_day, "day_samp_bin_pos.npy"), "r") as file_pos:
+            with open(os.path.join(addr_day, "day_samp_new_pos.npy"), "r") as file_pos:
                 matrix_pos = smio.load_sparse_csr(file_pos)
             matrix_pos = matrix_pos[:pos, :]
 
             matrix = vstack((matrix_neg, matrix_pos))
             np.random.shuffle(matrix)
     else:
-        with open(os.path.join(addr_day, "day_samp_bin.npy"), "r") as file_in:
+        with open(os.path.join(addr_day, "day_samp_new.npy"), "r") as file_in:
             matrix = smio.load_sparse_csr(file_in)
 
     if (not features_to_get == None) and (len(features_to_get) > 0):
