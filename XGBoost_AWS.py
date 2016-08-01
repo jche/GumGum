@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn import metrics
 import os
+import csv
 
 
 # XGBoost 101 found at http://xgboost.readthedocs.io/en/latest/python/python_intro.html
@@ -26,19 +27,19 @@ def format_data(data):
 if __name__ == "__main__":
     root = "/mnt/rips2/2016/"
     # Setting parameters
-    param = {'booster':'gbtree',   # Tree, not linear regression
-             'objective':'binary:logistic',   # Output probabilities
-             'eval_metric':['auc'],
-             'bst:max_depth':5,   # Max depth of tree
-             'bst:eta':.1,   # Learning rate (usually 0.01-0.2)
-             'bst:gamma':0,   # Larger value --> more conservative
-             'bst:min_child_weight':1,
-             'scale_pos_weight':30,   # Often num_neg/num_pos
-             'subsample':.8,
-             'silent':1,   # 0 outputs messages, 1 does not
-             'save_period':0,   # Only saves last model
-             'nthread':6,   # Number of cores used; otherwise, auto-detect
-             'seed':25}
+    param = {'booster': 'gbtree',   # Tree, not linear regression
+             'objective': 'binary:logistic',   # Output probabilities
+             'eval_metric': ['auc'],
+             'bst:max_depth': 5,   # Max depth of tree
+             'bst:eta': .2,   # Learning rate (usually 0.01-0.2)
+             'bst:gamma': 0,   # Larger value --> more conservative
+             'bst:min_child_weight': 1,
+             'scale_pos_weight': 30,   # Often num_neg/num_pos
+             'subsample': .8,
+             'silent': 1,   # 0 outputs messages, 1 does not
+             'save_period': 0,   # Only saves last model
+             'nthread': 6,   # Number of cores used; otherwise, auto-detect
+             'seed': 25}
     for month in range(5, 7):
         p1 = str(month).rjust(2, "0")
         for day in range(4, 26):
@@ -56,7 +57,7 @@ if __name__ == "__main__":
 
                 print "Working on " + train_data_name
 
-                evallist = [(dtest,'eval'), (dtrain,'train')]
+                evallist = [(dtrain,'train'), (dtest,'eval')]   # Want to train until eval error stops decreasing
 
                 num_round = 1000   # Number of rounds of training, increasing this increases the range of output values
                 bst = xgb.train(param,
@@ -71,28 +72,22 @@ if __name__ == "__main__":
 
                 y_pred = bst.predict(dtest)
 
-                with open(os.path.join(root2, "xgb_numbers.txt"), "a") as file:
-                    j_score = 0
-                    auc_score = 0
-                    best_recall = 0
-                    best_filter_rate = 0
-                    best_cut = 0
+                with open(os.path.join(root2, "xgb_numbers.csv"), "a") as file:
+                    # J score, AUC score, best recall, best filter rate, best cutoff
+                    results = [0, 0, 0, 0, 0]
                     for cutoff in range(0, 31):
                         cut = cutoff/float(100)   # Cutoff in decimal form
                         y = y_pred > cut   # If y values are greater than the cutoff
                         recall = metrics.recall_score(test_label, y)
                         # true_negative_rate = sum(np.logical_not(np.logical_or(test_label, y)))/float(len(y_pred))
                         filter_rate = sum(np.logical_not(y))/float(len(y_pred))
-                        if(recall*5+filter_rate > j_score):
-                            j_score = recall*5+filter_rate
-                            auc_score = metrics.roc_auc_score(test_label, y)
-                            best_recall = recall
-                            best_filter_rate = filter_rate
-                            best_cut = cut
-                    file.write("Report for " + p1 + "/" + p2 + ":\n")
-                    file.write("Best cutoff: %s\n" % best_cut)
-                    file.write("AUC: %s\n" % auc_score)
-                    file.write("Best recall: %s\n" % best_recall)
-                    file.write("Best filter rate: %s\n\n" % best_filter_rate)
+                        if recall*4.5+filter_rate > results[0]:
+                            results[0] = recall*4.5+filter_rate
+                            results[1] = metrics.roc_auc_score(test_label, y)
+                            results[2] = recall
+                            results[3] = filter_rate
+                            results[4] = cut
+                    wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
+                    wr.writerow(results)
             except:
                 pass
