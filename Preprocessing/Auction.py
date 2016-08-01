@@ -60,19 +60,24 @@ def process(entry, result):
             else:
                 result_tmp[4] = 1
             result.extend(result_tmp)
+            result.append(0)
     else:
         result.extend([0]*85)
+        result.append(1)    # Use the last column to indicate missing tmax
 
     # Auction - bkc
-    bkc_result = [0]*(len(bkcids_)+1)
+    bkc_result = [0]*(len(bkcids_)+2)
     bkc_str = entry["bkc"]
-    bkc_list = bkc_str.split(",")
-    for item in bkc_list:
-        try:
-            index = bkcids_.index(item)
-        except:
-            index = len(bkcids_)
-        bkc_result[index] = 1
-    result.extend(bkc_result)
+    if len(bkc_str) == 0:
+        bkc_result[len(bkc_result)-1] = 1
+    else:
+        bkc_list = bkc_str.split(",")
+        for item in bkc_list:
+            try:
+                index = bkcids_.index(item)
+            except:
+                index = len(bkcids_)-1
+            bkc_result[index] = 1
+        result.extend(bkc_result)
 
     return margin

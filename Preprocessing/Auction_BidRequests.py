@@ -4,7 +4,7 @@ import Shared as sd
 formats_ = [16, 31, 9, 12, 14, 3, 2, 7, 5, 21, 8, 20, 15, 6, 22, 27, 25, 26, 30, 13, 23]
 banners_ = [(300, 250), (728, 90), (160, 600), (320, 50), (300, 600), (970, 90), (468, 60), (234, 60),
             (13, 13), (12, 12), (17, 17), (18, 18), (10, 10), (300, 120), (16, 16), (250, 100), (19, 19), (320, 480),
-            (250, 70), (0, 0), (450, 100), (21, 21), (20, 20), (400, 400), (300, 100)]
+            (250, 70), (0, 0), (450, 100), (21, 21), (20, 20), (400, 400), (300, 100), (-1, -1)]    # (-1, -1) indicates missing banner
 
 
 def if_multiple_bid_floor(result_imp, bid_floor, n):
@@ -25,7 +25,7 @@ def process(margin, entry, result, mode):
     # Auction - Bidrequests - vertical id
     sd.binarize(result, entry["verticalid"]-1, 16)
 
-    # Auction - Bidrequests - Impressions - Bid Floor
+    # Auction - Bidrequests - Impressions - bid Floor
     bid_floor = round(float(entry["bidfloor"]), 2)
 
     if bid_floor-margin == 0:
@@ -63,7 +63,7 @@ def process(margin, entry, result, mode):
     # Auction - Bidrequests - Impressions - product
     sd.binarize(result, entry["product"]-1, 6)
 
-    # Auction - Bidrequests - Impressions - Banner
+    # Auction - Bidrequests - Impressions - banner
     width = entry["w"]
     height = entry["h"]
     banner_cat = [0, 0, 0]
