@@ -69,10 +69,14 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     print "Finished reading data file"
     return train_data, train_label
 
+def netSav(r,f):
+    netSaving = -5200+127000*f-850000*(1-r)
+    return netSaving
+
 if __name__ == "__main__":
     with open("/home/rmendoza/Desktop/resultsXGB_1.ods", "w") as output_file:
         wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
-        l = ['month','day','cutoff','recalll','filtered']
+        l = ['month','day','cutoff','recalll','filtered', 'time']
         wr.writerow(l)
         for diff in [1]:  #1,7  # as for now, only [1] means test on next day
             for month in range(6,7): #5,7    # as for now, only range(6,7) means june
@@ -81,6 +85,7 @@ if __name__ == "__main__":
                     print '------------------------------------------------'
                     print 'month = ', month,' and day = ',  day
                     try:
+                        start_time = time.time()
                         # Inputting training and testing set
                         #train_data, train_label = GetData(month, day)
                         X, y = GetData(month, day)
@@ -175,7 +180,10 @@ if __name__ == "__main__":
                                     print "Recall is: %s" % recalll
                                     print 'Filtering is = ', filtered
                                     print cf
-                                    l = [month,day,cutoff,recalll,filtered]
+                                    #get time:
+                                    timer = time.time() - start_time
+                                    print 'Time = ', timer
+                                    l = [month,day,cutoff,recalll,filtered,timer]
                                     wr.writerow(l)
                                 #else:
                                     #print 'Bad recall, not worth reporting'

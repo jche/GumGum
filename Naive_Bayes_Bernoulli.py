@@ -37,8 +37,8 @@ def get_io_addr():
                 addr_in = os.path.join(io_addr, filename_in)
                 list_io_addr.append(addr_in)
     return list_io_addr
-
-clf = BernoulliNB()
+alfa = 0.01
+clf = BernoulliNB(class_prior=[alfa, 1-alfa])
 list_io_addr = get_io_addr()
 
 for i in range(len(list_io_addr)):
