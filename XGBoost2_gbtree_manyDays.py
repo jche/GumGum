@@ -61,6 +61,10 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     print "Finished reading data file"
     return train_data, train_label
 
+def netSav(r,f):
+    netSaving = -5200+127000*f-850000*(1-r)
+    return netSaving
+
 if __name__ == "__main__":
     with open("/home/rmendoza/Desktop/resultsXGB_1.ods", "w") as output_file:
         wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)

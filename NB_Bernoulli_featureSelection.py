@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.metrics import confusion_matrix, recall_score
 from sklearn.naive_bayes import BernoulliNB
+from sklearn.feature_selection import RFE
 import time
 import os
 import csv
@@ -26,26 +27,19 @@ def format_data(data):
     m = int(np.size(d,1))   # Number of columns
     n = int(np.size(d,0))   # Number of rows
     print "There are %s data points, each with %s features" % (n, m-1)
-    x = d[:, :m-1]
-    y = d[:, m-1]
+    #x = d[:, :m-1]
+    #y = d[:, m-1]
+    nn = int(round(n*0.2))
+    x = d[:nn, :m-1]
+    y = d[:nn, m-1]
     print 'm = ', m
-        #Get rid of column 2460,, of d that is not bernoulli
-    x = np.delete(x,np.s_[2460],1)
-    # for counter in range(m-2):
-    #     if x[1,counter] != 0:
-    #         if x[1,counter]!=1:
-    #             print 'A non-bernoulli variable is found! ... '
-    #             print 'counter = ', counter
-    #             print 'x[1, counter] = ', x[1, counter]
-    #             #x = np.delete(x,np.s_[counter],1)
-    # print 'wait 20 seconds'
-    # time.sleep(20)
-
+        #Get rid of column 2457 of d that is not bernoulli
+    x = np.delete(x,np.s_[2457],1)
     # Just checking that indeed all non-Bernoulli variables are deleted
     for counter in range(m-2):
         if x[1,counter] != 0:
             if x[1,counter]!=1:
-                print 'Oh no! Still a nonbernoulli variable is found! ... '
+                'Oh no! Still a nonbernoulli variable is found! ... '
                 print 'counter = ', counter
                 print 'x[1, counter] = ', x[1, counter]
 
@@ -68,14 +62,12 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     :return:
     """
     #root = "/mnt/rips2/2016"  #for AWS
-    # root = "/home/rmendoza/Documents/Data/DataXGB_jul28"  #for local maschine
-    root = "/home/rmendoza/Documents/Data/DataReservoir_aug1"
+    root = "/home/rmendoza/Documents/Data/DataXGB_jul28"  #for local maschine
     p0 = "0" + str(month)
     p1 = str(day).rjust(2,'0')
     #dataroot = os.path.join(root,p0,p1,"day_samp_bin.npy")  # for AWS
     #binName = 'day_samp_bin'+p0+p1+'.npy'  #for local maschine #old data
-    #binName = 'day_samp_new_'+p0+p1+'.npy'## New data
-    binName = 'day_samp_res_25__'+p0+p1+'.npy'## Last data data day_samp_res_25__0604
+    binName = 'day_samp_new_'+p0+p1+'.npy'## New data
     dataroot = os.path.join(root,binName)   #for local maschine
     print "Reading Data..."
     train_data, train_label = format_data(dataroot)
@@ -90,19 +82,15 @@ def netSav(r,f):
     netSaving = -5200+127000*f-850000*(1-r)
     return netSaving
 
-alfa = 0.00005
-clf = BernoulliNB(class_prior=[alfa, 1-alfa])
+clf = BernoulliNB(class_prior=[0.001, 0.999])
 if __name__ == "__main__":
-    #with open("/home/rmendoza/Desktop/resultsNB_reservoir_50.ods", "w") as output_file:
-    with open("/home/rmendoza/Documents/NaiveBayesianDocumentation/Aug1_resultsToDate/resultsNB_reservoir_25_alfa0?00005.ods", "w") as output_file:
+    with open("/home/rmendoza/Desktop/temporaryOds.ods", "w") as output_file:
         wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
-        l = ['alfa = ',alfa]
-        wr.writerow(l)
-        l = ['month','TrainDay','testDay','recall','filtered', 'netSaving', 'time']
-        wr.writerow(l)
+        l = ['month','TrainDay','testDay','recall','filtered', 'time']
+        #wr.writerow(l)
         for diff in [1]:  #1,7  # as for now, only [1] means test on next day
             for month in range(6,7): #5,7    # as for now, only range(6,7) means june
-                for day in range(4,26): #1,32  # as for now, only range(4,5) means 1st day
+                for day in range(4,5): #1,32  # as for now, only range(4,5) means 1st day
                     print '------------------------------------------------'
                     print '------------------------------------------------'
                     print 'month = ', month,' and day = ',  day
@@ -114,7 +102,13 @@ if __name__ == "__main__":
                         print 'Data Read'
                         #time.sleep(20)  #sleep
                         print 'Training Data...'
-                        clf.partial_fit(train_data, train_label, classes=[0, 1])
+                        selector = RFE(clf)#selector = RFE(clf, 5, step=1)
+                        selector = selector.fit(train_data, train_label) #selector = selector.fit(train_data, train_label, classes=[0, 1])
+                        print 'The selected features are...'
+                        print selector.support_
+                        print 'and the ranking... '
+                        print selector.ranking_
+                        #clf.partial_fit(train_data, train_label, classes=[0, 1])
                         print 'Data Trained...'
                         y_true = test_label
                         n = len(y_true)
@@ -127,17 +121,42 @@ if __name__ == "__main__":
                         recalll = recall_score(y_true, y_pred)
                         #print 'calculating filtering'
                         filtered = (cf[0,0])/float(n)
-                        netSaving=12700*filtered-5200-850000*(1-recalll)
                         print "Recall is: %s" % recalll
                         print 'Filtering is = ', filtered
-                        print 'netSaving is = ', netSaving
                         print cf
                         #get time:
                         timer = time.time() - start_time
                         print 'Time = ', timer
-                        testday = day + diff
-                        l = [month,day,testday,recalll,filtered, netSaving,timer]
-                        wr.writerow(l)
+                        #print("--- %s seconds ---" % (time.time() - start_time))
+                        # testday = day + diff
+                        # l = [month,day,testday,recalll,filtered,timer]
+                        # wr.writerow(l)
+                        # ###get sum of columns
+                        # vectorSums = np.sum(test_data, axis=0) #gets the count of the columns of each feature
+                        # v1, v2, v3, v4, v5 =np.array_split(vectorSums,5) #split vector into 5 just to write it
+                        # ##toPrint.append(v1)
+                        # ##toPrint.append(v2)
+                        # wr.writerow(v1)
+                        # wr.writerow(v2)
+                        # wr.writerow(v3)
+                        # wr.writerow(v4)
+                        # wr.writerow(v5)
+                        # ###get Probas to read
+                        # featureLogProb_ = clf.feature_log_prob_
+                        # toPrint = []
+                        # featProb = np.exp(featureLogProb_)  #contains the proba(xi | y), in the form size = 2xk,   y = 0, y = 1 and xi = 1
+                        # toRead = np.divide(featProb[1,:],featProb[0,:])  #this is the proportion p(xi=1 | y =1) / p(xi = 1 | y = 0)
+                        # v1, v2, v3, v4, v5 =np.array_split(toRead,5) #split vector into 5 just to write it
+                        # # wr.writerow(v1)
+                        # # wr.writerow(v2)
+                        # # wr.writerow(v3)
+                        # # wr.writerow(v4)
+                        # # wr.writerow(v5)
+                        # #toPrint.append(featProb)
+                        # #toPrint.append(toRead)
+                        # #print 'len(toPrint)', len(toPrint)
+                        # #for jk in range(len(toPrint)):
+                        # #    wr.writerow(toPrint[jk])
 
                     except:
                         pass
