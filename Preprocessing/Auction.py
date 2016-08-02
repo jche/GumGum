@@ -76,7 +76,7 @@ def process(entry, result):
             try:
                 index = bkcids_.index(item)
             except:
-                index = len(bkcids_)-1
+                index = len(bkc_result)-2
             bkc_result[index] = 1
     result.extend(bkc_result)
 
