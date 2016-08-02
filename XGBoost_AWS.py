@@ -81,8 +81,8 @@ if __name__ == "__main__":
                         recall = metrics.recall_score(test_label, y)
                         # true_negative_rate = sum(np.logical_not(np.logical_or(test_label, y)))/float(len(y_pred))
                         filter_rate = sum(np.logical_not(y))/float(len(y_pred))
-                        if recall*4.5+filter_rate > results[0]:
-                            results[0] = recall*4.5+filter_rate
+                        if recall*6.7+filter_rate > results[0]:
+                            results[0] = recall*6.7+filter_rate
                             results[1] = metrics.roc_auc_score(test_label, y)
                             results[2] = recall
                             results[3] = filter_rate
