@@ -2,6 +2,9 @@ import xgboost as xgb
 import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn import metrics
+import operator
+import pandas as pd
+from matplotlib import pylab as plt
 
 
 # XGBoost 101 found at http://xgboost.readthedocs.io/en/latest/python/python_intro.html
@@ -24,42 +27,57 @@ def format_data(data):
     return x, y
 
 
+def create_feature_map(features):
+    outfile = open('xgb.fmap', 'w')
+    i = 0
+    for feat in features:
+        outfile.write('{0}\t{1}\tq\n'.format(i, feat))
+        i = i + 1
+    outfile.close()
+
+
 if __name__ == "__main__":
     # Inputting training and testing set
-    train_data, train_label = format_data("/home/jche/Desktop/day_samp_res_50_0604.npy")
-    dtrain = xgb.DMatrix(train_data, label=train_label)
-    test_data, test_label = format_data("/home/jche/Desktop/day_samp_res_50_0605.npy")
+    # train_data, train_label = format_data("/home/jche/Desktop/day_samp_new_0611.npy")
+    # dtrain = xgb.DMatrix(train_data, label=train_label)
+    test_data, test_label = format_data("/home/jche/Desktop/day_samp_new_0612.npy")
     dtest = xgb.DMatrix(test_data, label=test_label)
 
     # Setting parameters
-    param = {'booster':'gbtree',   # Tree, not linear regression
-             'objective':'binary:logistic',   # Output probabilities
-             'eval_metric':['auc'],
-             'bst:max_depth':5,   # Max depth of tree
-             'bst:eta':.1,   # Learning rate (usually 0.01-0.2)
-             'bst:gamma':0,   # Larger value --> more conservative
-             'bst:min_child_weight':1,
-             'scale_pos_weight':30,   # Often num_neg/num_pos
-             'subsample':.8,
-             'silent':1,   # 0 outputs messages, 1 does not
-             'save_period':0,   # Only saves last model
-             'nthread':6,   # Number of cores used; otherwise, auto-detect
-             'seed':25}
-    evallist = [(dtrain,'train'), (dtest,'eval')]
+    # param = {'booster':'gbtree',   # Tree, not linear regression
+    #          'objective':'binary:logistic',   # Output probabilities
+    #          'eval_metric':['auc'],
+    #          'bst:max_depth':5,   # Max depth of tree
+    #          'bst:eta':.1,   # Learning rate (usually 0.01-0.2)
+    #          'bst:gamma':0,   # Larger value --> more conservative
+    #          'bst:min_child_weight':1,
+    #          'scale_pos_weight':30,   # Often num_neg/num_pos
+    #          'subsample':.8,
+    #          'silent':1,   # 0 outputs messages, 1 does not
+    #          'save_period':0,   # Only saves last model
+    #          'nthread':6,   # Number of cores used; otherwise, auto-detect
+    #          'seed':25}
+    # evallist = [(dtrain,'train'), (dtest,'eval')]
 
-    num_round = 1000   # Number of rounds of training, increasing this increases the range of output values
-    bst = xgb.train(param,
-                    dtrain,
-                    num_round,
-                    evallist,
-                    early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
-    bst.dump_model('/home/jche/Desktop/xgb_june_04_to_05_v2.txt')
+    # num_round = 1000   # Number of rounds of training, increasing this increases the range of output values
+    # bst = xgb.train(param,
+    #                 dtrain,
+    #                 num_round,
+    #                 evallist,
+    #                 early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
+    # bst.dump_model('/home/jche/Desktop/xgb_june_04_to_05_v2.txt')
+    # bst.save_model('/home/jche/Desktop/xgbtemp.model')
+
+    # [6.8521920559407121, 0.6611915263175584, 0.97250776954338991, 0.33639000000000002, 0.22]
+    bst = xgb.Booster() #init model
+    bst.load_model("/home/jche/Desktop/xgbtemp.model") # load data
+
 
     y_true = test_label
     y_pred = bst.predict(dtest)
     # J score, AUC score, best recall, best filter rate, best cutoff
     results = [0, 0, 0, 0, 0]
-    for cutoff in range(0, 31):
+    for cutoff in range(10, 15):
         cut = cutoff/float(100)   # Cutoff in decimal form
         y = y_pred > cut   # If y values are greater than the cutoff
         recall = metrics.recall_score(test_label, y)
@@ -72,3 +90,22 @@ if __name__ == "__main__":
             results[3] = filter_rate
             results[4] = cut
     print results
+
+    #xgb.plot_importance(bst, xlabel="test")
+    #xgb.plot_tree(bst, num_trees=2)
+
+    features = ["f" + str(i) for i in range(0,2431)]   # Feature names are f0..f2430
+    create_feature_map(features)
+
+    importance = bst.get_fscore(fmap='xgb.fmap')
+    importance = sorted(importance.items(), key=operator.itemgetter(1))
+
+    df = pd.DataFrame(importance, columns=['feature', 'fscore'])
+    df['fscore'] = df['fscore'] / df['fscore'].sum()
+
+    plt.figure()
+    df.plot()
+    df.plot(kind='barh', x='feature', y='fscore', legend=False, figsize=(6, 10))
+    plt.title('XGBoost Feature Importance')
+    plt.xlabel('relative importance')
+    plt.gcf().savefig('feature_importance_xgb.png')
