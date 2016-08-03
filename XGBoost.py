@@ -98,7 +98,8 @@ if __name__ == "__main__":
     create_feature_map(features)
 
     importance = bst.get_fscore(fmap='xgb.fmap')
-    importance = sorted(importance.items(), key=operator.itemgetter(1))
+    importance = sorted(importance.items(), key=operator.itemgetter(1), reverse=True)
+    print importance
 
     df = pd.DataFrame(importance, columns=['feature', 'fscore'])
     df['fscore'] = df['fscore'] / df['fscore'].sum()
