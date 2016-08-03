@@ -116,7 +116,7 @@ if __name__ == "__main__":
                         for f in range(train_data.shape[1]):
                             print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
                         # Plot the feature importances of the forest
-                        print 'plotting...'
+
                         X = train_data
                         plt.figure()
                         plt.title("Feature importances")
@@ -124,7 +124,7 @@ if __name__ == "__main__":
                                color="r", yerr=std[indices], align="center")
                         plt.xticks(range(X.shape[1]), indices)
                         plt.xlim([-1, X.shape[1]])
-                        plt.show()
+
                         #print 'waiting (100 seconds...'
                         # time.sleep(50)
                         # selector = RFE(clf)#selector = RFE(clf, 5, step=1)
@@ -184,7 +184,8 @@ if __name__ == "__main__":
                         # #print 'len(toPrint)', len(toPrint)
                         # #for jk in range(len(toPrint)):
                         # #    wr.writerow(toPrint[jk])
-
+                        print 'plotting...'
+                        plt.show()
                     except:
                         pass
                         print 'failure, no such day (or some other potential error)'

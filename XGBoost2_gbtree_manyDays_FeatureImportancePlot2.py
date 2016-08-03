@@ -50,8 +50,7 @@ def recall(preds, dtrain):
     preds_bin = np.greater(preds, np.zeros(len(labels))+cutoff)
     return "recall", recall_score(labels, preds_bin)
 
-#def GetData(month, day, inn): ## Input Formatted Data  #AWS
-def GetData(month, day): ##    #LOCAL
+def GetData(month, day, inn): ## Input Weiyi-formatted Data
     """
     Takes the data from a given day/month and outputs a numpy array
     :param month:
@@ -74,22 +73,30 @@ def GetData(month, day): ##    #LOCAL
     #temp = np.load(dataroot)  #old code
     #Data = csr_matrix((  temp['data'], temp['indices'], temp['indptr']),shape = temp['shape'], dtype=float).toarray()
     ## FOR AWS
-    #addr = os.path.join(root, str(month).rjust(2, "0"), str(day).rjust(2, "0")) #AWS
+    addr = os.path.join(root, str(month).rjust(2, "0"), str(day).rjust(2, "0"))
     #print "Reading Data..."
     #train_data, train_label = format_data(dataroot)  #local Maschine
-    #if inn:
-    #    train_data, train_label = gdr.get(addr, ratio=7)#), mode="res-25") # AWS
-    #else:
-    #    X_test, y_test = gdr.get(addr)
+    # if inn:
+    #     train_data, train_label = gdr.get(addr, ratio=7)#), mode="res-25") # AWS
+    # else:
+    #     X_test, y_test = gdr.get(addr)
     printit( "Finished reading data file")
     return train_data, train_label
+
+def create_feature_map(features):
+    outfile = open('xgb2.fmap', 'w')
+    i = 0
+    for feat in features:
+        outfile.write('{0}\t{1}\tq\n'.format(i, feat))
+        i = i + 1
+    outfile.close()
 
 def netSav(r,f):
     netSaving = -5200+127000*f-850000*(1-r)
     return netSaving
 
 if __name__ == "__main__":
-    #with open("/home/ubuntu/Rodrigo/test_XGBDmatrx_AWS.ods", "wr") as output_file:  #AWS
+    # with open("/home/ubuntu/Rodrigo/test_XGBDmatrx_AWS_featureSel.ods", "wr") as output_file:  #AWS
     with open("/home/rmendoza/Desktop/resultsXGB_1.ods", "w") as output_file:
         wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
         l = ['month','TrainDay','testDay','recall','filtered', 'time','NetSavings']
@@ -104,13 +111,11 @@ if __name__ == "__main__":
                         start_time = time.time()
                         # Inputting training and testing set
                         #train_data, train_label = GetData(month, day)
-                        X, y = GetData(month, day)  #local
-                        printit('got X, y')
-                        #X, y = GetData(month, day, 'true')  #aws
+                        #X, y = GetData(month, day)
+                        X, y = GetData(month, day, 'true')
                         #dtrain = xgb.DMatrix(train_data, label=train_label)
                         dtrain = xgb.DMatrix(X, label=y)
-                        test_data, test_label = GetData(month, day+diff) #local
-                        #test_data, test_label = GetData(month, day+diff,'false')  #aws
+                        test_data, test_label = GetData(month, day+diff,'false')
                         dtest = xgb.DMatrix(test_data, label=test_label)
 
                         printit(  'selectKbest(f_classif, k =360) .....')
@@ -141,31 +146,29 @@ if __name__ == "__main__":
                                                 subsample=0.95,
                                                 colsample_bytree=0.85,
                                                 seed=4242)
-                        clf.fit(X_train, y_train, early_stopping_rounds=3, eval_metric="error", eval_set=[(X_test, y_test)])
+                        clf.fit(X_train, y_train, early_stopping_rounds=10, eval_metric="error", eval_set=[(X_test, y_test)])
                         ###  Clean also these
                         printit( ['Overall AUC:', roc_auc_score(y, clf.predict_proba(X_sel)[:,1]) ] )
 
                         sel_test = selectK.transform(test_data)
                         y_pred = clf.predict_proba(sel_test)
-                        printit(['y_pred = ', y_pred])
-
-
-
-
+                        printit('y_pred successful')
                         # submission = pd.DataFrame({"ID":test_data.index, "TARGET":y_pred[:,1]})
-                        # #printit('submission successful')
                         # submission.to_csv("submission.csv", index=False)
-                        # #printit('submission successful')
+
+                        ####FEATURES NAMES
+                        features = ["f" + str(i) for i in range(0,2431)]   # Feature names are f0..f2430
+                        create_feature_map(features)
+
                         mapFeat = dict(zip(["f"+str(i) for i in range(len(features))],features))
                         ts = pd.Series(clf.booster().get_fscore())
                         ts.index = ts.reset_index()['index'].map(mapFeat)
                         ts.sort_values()[-15:].plot(kind="barh", title=("features importance"))
-                        printit('ts.sort_values()... successful')
 
                         featp = ts.sort_values()[-15:].plot(kind='barh', x='feature', y='fscore', legend=False, figsize=(6, 10))
                         plt.title('XGBoost Feature Importance')
                         fig_featp = featp.get_figure()
-                        fig_featp.savefig('feature_importance_xgb22.png', bbox_inches='tight', pad_inches=1)
+                        fig_featp.savefig('feature_importance_xgb.png', bbox_inches='tight', pad_inches=1)
 
 
                         #### OLD CODE: ...

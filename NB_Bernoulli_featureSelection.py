@@ -86,7 +86,7 @@ clf = BernoulliNB(class_prior=[0.001, 0.999])
 if __name__ == "__main__":
     with open("/home/rmendoza/Desktop/temporaryOds.ods", "w") as output_file:
         wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
-        l = ['month','TrainDay','testDay','recall','filtered', 'time']
+        l = ['month','TrainDay','testDay','recall','filtered', 'time','NetSavings']
         #wr.writerow(l)
         for diff in [1]:  #1,7  # as for now, only [1] means test on next day
             for month in range(6,7): #5,7    # as for now, only range(6,7) means june
@@ -129,7 +129,7 @@ if __name__ == "__main__":
                         print 'Time = ', timer
                         #print("--- %s seconds ---" % (time.time() - start_time))
                         # testday = day + diff
-                        # l = [month,day,testday,recalll,filtered,timer]
+                        # l = [month,day,testday,recalll,filtered,timer,netSaving]
                         # wr.writerow(l)
                         # ###get sum of columns
                         # vectorSums = np.sum(test_data, axis=0) #gets the count of the columns of each feature

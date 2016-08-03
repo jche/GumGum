@@ -1,15 +1,16 @@
-import xgboost as xgb
-import numpy as np
-from scipy.sparse import csr_matrix
-from sklearn.metrics import confusion_matrix, recall_score
-from sklearn.naive_bayes import BernoulliNB
-import time
-import os
-import csv
-import operator
-import pandas as pd
-from matplotlib import pylab as plt
-from sklearn.preprocessing import LabelEncoder
+import numpy as np  #matrixes and arrays
+from scipy.sparse import csr_matrix   # to process the sparse matrixes
+from sklearn.metrics import confusion_matrix, recall_score  #metrics: cf and recall = tp / (tp + fn)
+from sklearn.naive_bayes import BernoulliNB  #the model we will be useing is the Bernoulli    > )
+import time  # to time and make pauses
+import os  #for access roots and addresses
+import csv  #to print to csvs
+import operator   # ?
+import pandas as pd   # ?
+from matplotlib import pylab as plt  # to make python plots
+from sklearn.preprocessing import LabelEncoder  # ?
+import Get_Data_Rodrigo as gdr  # to get Data from AWS
+import sys # to print in real time
 
 
 # XGBoost 101 found at http://xgboost.readthedocs.io/en/latest/python/python_intro.html
@@ -60,7 +61,11 @@ def recall(preds, dtrain):
     preds_bin = np.greater(preds, np.zeros(len(labels))+cutoff)
     return "recall", recall_score(labels, preds_bin)
 
-def GetData(month, day): ## Input Weiyi-formatted Data
+def printit(text):
+    print text
+    sys.stdout.flush()
+
+def GetData(month, day, inn): ## Input Weiyi-formatted Data
     """
     Takes the data from a given day/month and outputs a numpy array
     :param month:
@@ -69,53 +74,59 @@ def GetData(month, day): ## Input Weiyi-formatted Data
     """
     #root = "/mnt/rips2/2016"  #for AWS
     # root = "/home/rmendoza/Documents/Data/DataXGB_jul28"  #for local maschine
-    root = "/home/rmendoza/Documents/Data/DataReservoir_aug1"
+    #root = "/home/rmendoza/Documents/Data/DataReservoir_aug1"
+    root = "/mnt/rips2/2016"   #For AWS
     p0 = "0" + str(month)
     p1 = str(day).rjust(2,'0')
     #dataroot = os.path.join(root,p0,p1,"day_samp_bin.npy")  # for AWS
     #binName = 'day_samp_bin'+p0+p1+'.npy'  #for local maschine #old data
     #binName = 'day_samp_new_'+p0+p1+'.npy'## New data
-    binName = 'day_samp_res_25__'+p0+p1+'.npy'## Last data data day_samp_res_25__0604
-    dataroot = os.path.join(root,binName)   #for local maschine
-    print "Reading Data..."
-    train_data, train_label = format_data(dataroot)
-
-    #temp = np.load(dataroot)  #old code
-    #Data = csr_matrix((  temp['data'], temp['indices'], temp['indptr']),shape = temp['shape'], dtype=float).toarray()
-
-    print "Finished reading data file"
+    #binName = 'day_samp_res_25__'+p0+p1+'.npy'## Last data data day_samp_res_25__0604
+    #dataroot = os.path.join(root,binName)   #for local maschine
+    ## FOR AWS
+    addr = os.path.join(root, str(month).rjust(2, "0"), str(day).rjust(2, "0"))
+    #print "Reading Data..."
+    printit("Reading Data...")
+    #train_data, train_label = format_data(dataroot)  #local Maschine
+    if inn:
+        train_data, train_label = gdr.get(addr, ratio=7)#), mode="res-25") # AWS
+    else:
+        X_test, y_test = gdr.get(addr)
+    printit( "Finished reading data file")
     return train_data, train_label
 
 def netSav(r,f):
     netSaving = -5200+127000*f-850000*(1-r)
     return netSaving
 
-alfa = 0.00005
+alfa = 0.01
 clf = BernoulliNB(class_prior=[alfa, 1-alfa])
+
 if __name__ == "__main__":
-    #with open("/home/rmendoza/Desktop/resultsNB_reservoir_50.ods", "w") as output_file:
-    with open("/home/rmendoza/Documents/NaiveBayesianDocumentation/Aug1_resultsToDate/resultsNB_reservoir_25_alfa0?00005.ods", "w") as output_file:
+    with open("/home/ubuntu/Rodrigo/test_NB_AWS.ods", "wr") as output_file:  #AWS
+    ##with open("/home/rmendoza/Desktop/testNB_sampPosNeg.ods", "wr") as output_file:  #NO AWS
+    #with open("/home/rmendoza/Documents/NaiveBayesianDocumentation/Aug1_resultsToDate/testNB.ods", "wr") as output_file:
         wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
         l = ['alfa = ',alfa]
         wr.writerow(l)
-        l = ['month','TrainDay','testDay','recall','filtered', 'netSaving', 'time']
+        l = ['month','TrainDay','testDay','recall','filtered', 'time','NetSavings']
         wr.writerow(l)
         for diff in [1]:  #1,7  # as for now, only [1] means test on next day
             for month in range(6,7): #5,7    # as for now, only range(6,7) means june
-                for day in range(4,26): #1,32  # as for now, only range(4,5) means 1st day
-                    print '------------------------------------------------'
-                    print '------------------------------------------------'
-                    print 'month = ', month,' and day = ',  day
+                for day in range(4,5): #1,32  # as for now, only range(4,5) means 1st day
+                    printit( '------------------------------------------------')
+                    printit( '------------------------------------------------')
+                    printit([ 'month = ', month,' and day = ',  day])
                     try:
                         start_time = time.time()
                         # Inputting training and testing set
-                        train_data, train_label = GetData(month, day)
-                        test_data, test_label = GetData(month, day+diff)
-                        print 'Data Read'
+                        train_data, train_label = GetData(month, day, 'true')
+                        test_data, test_label = GetData(month, day+diff,'false')
+                        printit( 'Data Read')
                         #time.sleep(20)  #sleep
-                        print 'Training Data...'
+                        printit( 'Training Data...')
                         clf.partial_fit(train_data, train_label, classes=[0, 1])
-                        print 'Data Trained...'
+                        printit( 'Data Trained...')
                         y_true = test_label
                         n = len(y_true)
                         ### Here's a problem...
@@ -128,20 +139,21 @@ if __name__ == "__main__":
                         #print 'calculating filtering'
                         filtered = (cf[0,0])/float(n)
                         netSaving=12700*filtered-5200-850000*(1-recalll)
-                        print "Recall is: %s" % recalll
-                        print 'Filtering is = ', filtered
-                        print 'netSaving is = ', netSaving
-                        print cf
+                        printit([ "Recall is: " , recalll])
+                        printit([  'Filtering is = ', filtered])
+                        printit( [ 'netSaving is = ', netSaving])
+                        printit(  cf)
                         #get time:
                         timer = time.time() - start_time
-                        print 'Time = ', timer
+                        printit( ["Training Completed in {} seconds".format(round(time.time()-start_time, 2))])
+                        #printit( ['Time = ', timer])
                         testday = day + diff
-                        l = [month,day,testday,recalll,filtered, netSaving,timer]
+                        l = [month,day,testday,recalll,filtered, timer, netSaving]
                         wr.writerow(l)
 
                     except:
                         pass
-                        print 'failure, no such day (or some other potential error)'
+                        printit( 'failure, no such day (or some other potential error)')
                         #time.sleep(20)  #sleep
                     print '_____________________________________________________________________'
                     print '_____________________________________________________________________'
