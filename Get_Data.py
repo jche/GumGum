@@ -102,10 +102,10 @@ def get(addr_day, hour = -1, cluster_number = -1, ratio=-1, features_to_get=None
                 matrix = vstack((matrix_neg, matrix_pos))
                 np.random.shuffle(matrix)
             else:
-                with open(os.path.join(addr_day, "day_samp_new_neg.npy"), "r") as file_neg:
+                with open(os.path.join(addr_day,"PosNeg", "day_samp_new_neg.npy"), "r") as file_neg:
                     matrix_neg = smio.load_sparse_csr(file_neg)
                 matrix_neg = matrix_neg[:neg, :]
-                with open(os.path.join(addr_day, "day_samp_new_pos.npy"), "r") as file_pos:
+                with open(os.path.join(addr_day,"PosNeg", "day_samp_new_pos.npy"), "r") as file_pos:
                     matrix_pos = smio.load_sparse_csr(file_pos)
                 matrix_pos = matrix_pos[:pos, :]
 
