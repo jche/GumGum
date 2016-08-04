@@ -4,7 +4,8 @@ import paramiko
 
 
 #file_name = "NB_Bernoulli_manyDays.py"
-file_name = "XGBoost2_gbtree_manyDays_FeatureSelection.py"
+#file_name = "XGBoost2_gbtree_manyDays_FeatureSelection.py"
+file_name = "XGBoost2_gbtree_manyDays_FeatureImportancePlot2.py"
 #file_name = "Test.py"
 path_to_upload = "Rodrigo"
 overwrite = False

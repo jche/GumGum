@@ -65,12 +65,12 @@ if __name__ == "__main__":
              'seed':25}
     evallist = [(dtrain,'train'), (dtest,'eval')]
 
-    num_round = 1000   # Number of rounds of training, increasing this increases the range of output values
+    num_round = 250   # Number of rounds of training, increasing this increases the range of output values
     bst = xgb.train(param,
                     dtrain,
                     num_round,
-                    evallist,
-                    early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
+                    evallist)
+                    #early_stopping_rounds=10)   # If error doesn't decrease in n rounds, stop early
     bst.dump_model('/home/rmendoza/Desktop/xgb_june_04_to_05_v2.txt')
     # bst.save_model('/home/rmendoza/Desktop/xgbtemp.model')
 
