@@ -112,8 +112,13 @@ def get(addr_day, hour = -1, cluster_number = -1, ratio=-1, features_to_get=None
                 matrix = vstack((matrix_neg, matrix_pos))
                 np.random.shuffle(matrix)
         else:
-            with open(os.path.join(addr_day, "day_samp_new.npy"), "r") as file_in:
-                matrix = smio.load_sparse_csr(file_in)
+            if cluster_number != -1:
+                with open(os.path.join(addr_day,"Clusters", "day_samp_new_cluster_" + str(cluster_number) + ".npz"), "r") as file:
+                    matrix = smio.load_sparse_csr(file)
+                    print "Cluster %s Loaded" % cluster_number
+            else:
+                with open(os.path.join(addr_day, "day_samp_new.npy"), "r") as file_in:
+                    matrix = smio.load_sparse_csr(file_in)
 
     if (not features_to_get == None) and (len(features_to_get) > 0):
         matrix = select_features(matrix, features_to_get)
