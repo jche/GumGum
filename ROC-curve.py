@@ -13,7 +13,8 @@ from sklearn import metrics
 ###############################################################################
 # Data IO and generation
 # import some data to play with
-file = "/home/kbhalla/Desktop/Data/day_samp_new.npy"
+#file = "/home/kbhalla/Desktop/Data/day_samp_new.npy"
+file = "/home/rmendoza/Documents/Data/day_samp_new_0604.npy"
 with open(file, "r") as file_in:
         matrix = smio.load_sparse_csr(file_in)
 
