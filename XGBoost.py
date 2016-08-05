@@ -103,7 +103,7 @@ if __name__ == "__main__":
     #xgb.plot_importance(bst, xlabel="test")
     #xgb.plot_tree(bst, num_trees=2)
 
-    features = ["f" + str(i) for i in range(0,2431)]   # Feature names are f0..f2430
+    features = ["f" + str(i) for i in range(0,2531)]   # Feature names are f0..f2430
     create_feature_map(features)
 
     importance = bst.get_fscore(fmap='xgb.fmap')
