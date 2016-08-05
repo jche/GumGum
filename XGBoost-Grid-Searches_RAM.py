@@ -3,6 +3,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn import metrics
 import csv
+from SendEmail import sendEmail
 
 
 
@@ -25,20 +26,21 @@ def format_data(data):
 
 
 if __name__ == "__main__":
-    with open('/home/kbhalla/Desktop/Results/XGB-Grid-Results3.csv', 'w') as file:
+    with open('/home/rmendoza/Desktop/XGBoost/XGB-Grid-Results5.csv', 'w') as file:
         # Inputting training and testing set
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
-        wr.writerow(['J-score','AUC','Recall','Filter','Cut','Net Savings', 'eta', 'alpha', 'day trained', 'day predicted'])
+        wr.writerow(['J-score','AUC','Recall','Filter','Cut','Net_Savings', 'eta', 'num_round', 'day_trained', 'day_predicted'])
         for eta in [.01, .05, .1, .15, .2]:
-            for alpha in [0,1,2,4]:
+            for num_round in [100,80,70,55]:
                 for i in range(22,25):
+                    alpha = 0
                     p0 = str(i).rjust(2,'0')
                     p1 = str(i+1).rjust(2,'0')
                     #train_data, train_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p0+".npy")
                     train_data, train_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_new_06'+p0+'.npy')
                     dtrain = xgb.DMatrix(train_data, label=train_label)
                     #test_data, test_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p1+".npy")
-                    test_data, test_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/dday_samp_new_06'+p1+'.npy')
+                    test_data, test_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_new_06'+p1+'.npy')
                     dtest = xgb.DMatrix(test_data, label=test_label)
                     p = np.count_nonzero(train_label)
                     n = len(train_label) - p
@@ -55,21 +57,20 @@ if __name__ == "__main__":
                              'silent':1,   # 0 outputs messages, 1 does not
                              'save_period':0,   # Only saves last model
                              'nthread':6,   # Number of cores used; otherwise, auto-detect
-                             'seed':25,
-                             'alpha': alpha}
+                             'seed':25}
                     evallist = [(dtrain,'train'), (dtest,'eval')]
 
-                    num_round = int(100*0.2/float(eta))   # Number of rounds of training, increasing this increases the range of output values
+                    #num_round = int(100*0.2/float(eta))   # Number of rounds of training, increasing this increases the range of output values
                     bst = xgb.train(param,
                                     dtrain,
                                     num_round,
                                     evallist)   # If error doesn't decrease in n rounds, stop early
-                    bst.dump_model('/home/kbhalla/Desktop/xgb/xgb_june_' + p0 + '_to_' + p1 + '_v2.txt')
+                    bst.dump_model('/home/rmendoza/Desktop/XGBoost/5xgb_june_' + p0 + '_to_' + p1 + '_v2.txt')
 
                     y_true = test_label
                     y_pred = bst.predict(dtest)
                     # J score, AUC score, best recall, best filter rate, best cutoff
-                    results = [0, 0, 0, 0, 0, 0, eta, alpha, p0, p1]
+                    results = [0, 0, 0, 0, 0, 0, eta, num_round, p0, p1]
                     for cutoff in range(0, 31):
                         cut = cutoff/float(100)   # Cutoff in decimal form
                         y = y_pred > cut   # If y values are greater than the cutoff
@@ -84,5 +85,11 @@ if __name__ == "__main__":
                             results[4] = cut
                             results[5] = 127000*filter_rate -5200 -850000*(1-recall)
                     wr.writerow(results)
+                    print 'next day'
+                    print '--------------------------'
+                print '_______________________________________________________________________'
+                print '_______________________________________________________________________'
                 wr.writerow(['Increasing Child'])
             wr.writerow(['Increasing Subsample','Child'])
+
+sendEmail('moralesmendozar@gmail.com','Code Done',"XGB-Grid-Results5 ended running")
