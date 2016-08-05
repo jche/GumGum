@@ -18,4 +18,4 @@ def sendEmail(you,subject,text):
     mail.sendmail(me, you, msg.as_string())
     mail.quit()
 
-sendEmail('moralesmendozar@gmail.com','Your Subject here',"Your message Here")
+#sendEmail('moralesmendozar@gmail.com','Your Subject here',"Your message Here")

@@ -92,4 +92,4 @@ if __name__ == "__main__":
                 wr.writerow(['Increasing Child'])
             wr.writerow(['Increasing Subsample','Child'])
 
-sendEmail('moralesmendozar@gmail.com','Code Done',"XGB-Grid-Results5 ended running")
+sendEmail('moralesmendozar@gmail.com','Code Done',"XGBoost-Grid-Searches_RAM.py ended running in the local RIPS computer. :P")
