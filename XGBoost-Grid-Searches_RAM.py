@@ -31,16 +31,16 @@ if __name__ == "__main__":
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
         wr.writerow(['J-score','AUC','Recall','Filter','Cut','Net_Savings', 'eta', 'num_round', 'day_trained', 'day_predicted'])
         for eta in [.01, .05, .1, .15, .2]:
-            for num_round in [2]:#[1000,8000,600,500, 400, 250, 200]:
+            for num_round in [1000,8000,600,500, 400, 250, 200]:
                 for i in range(22,24):  #i is the day, goes to 24 to test on 25 and end. :P
                     alpha = 0
                     p0 = str(i).rjust(2,'0')  #the day to train
                     p1 = str(i+1).rjust(2,'0')  #the day to test
                     #train_data, train_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p0+".npy")
-                    train_data, train_label = format_data('/home/rmendoza/Documents/Data/DataHourly/output_new_06'+p0+'.npy')
+                    train_data, train_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_new_06'+p0+'.npy')
                     dtrain = xgb.DMatrix(train_data, label=train_label)
                     #test_data, test_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p1+".npy")
-                    test_data, test_label = format_data('/home/rmendoza/Documents/Data/DataHourly/day_samp_new_06'+p1+'.npy')
+                    test_data, test_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_new_06'+p1+'.npy')
                     dtest = xgb.DMatrix(test_data, label=test_label)
                     p = np.count_nonzero(train_label)
                     n = len(train_label) - p
@@ -85,12 +85,12 @@ if __name__ == "__main__":
                             results[4] = cut
                             results[5] = 127000*filter_rate -5200 -850000*(1-recall)
                     wr.writerow(results)
-                    print 'done for the DAY'
+                    print 'done for the DAY',p0
                     print '-------------------------------------'
                     print '-------------------------------------'
                 print '_______________________________________________________________________'
                 print '_______________________________________________________________________'
-                #wr.writerow(['Increasing Child'])
-            #wr.writerow(['Increasing Subsample','Child'])
+                wr.writerow(['Increasing_num_Round'])
+            wr.writerow(['Increasing_eta','num_Round_fixed'])
 
 sendEmail('moralesmendozar@gmail.com','Code Done',"XGBoost-Grid-Searches_RAM.py ended running in the local RIPS computer. :P")
