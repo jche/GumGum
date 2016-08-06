@@ -38,7 +38,7 @@ if __name__ == "__main__":
                     train_data, train_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_new_06'+p0+'.npy')
                     dtrain = xgb.DMatrix(train_data, label=train_label)
                     #test_data, test_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p1+".npy")
-                    test_data, test_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/dday_samp_new_06'+p1+'.npy')
+                    test_data, test_label = format_data('/home/rmendoza/Documents/Data/DataXGB_jul28/day_samp_new_06'+p1+'.npy')
                     dtest = xgb.DMatrix(test_data, label=test_label)
                     p = np.count_nonzero(train_label)
                     n = len(train_label) - p
