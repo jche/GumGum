@@ -17,5 +17,6 @@ def sendEmail(you,subject,text):
     msg.attach(part1)
     mail.sendmail(me, you, msg.as_string())
     mail.quit()
+    print 'email sent'
 
 #sendEmail('moralesmendozar@gmail.com','Your Subject here',"Your message Here")

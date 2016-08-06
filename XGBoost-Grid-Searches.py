@@ -64,7 +64,7 @@ if __name__ == "__main__":
                                     dtrain,
                                     num_round,
                                     evallist)   # If error doesn't decrease in n rounds, stop early
-                    bst.dump_model('/home/kbhalla/Desktop/xgb/xgb_june_' + p0 + '_to_' + p1 + '_v2.txt')
+                    bst.dump_model('/home/kbhalla/Desktop/xgb/xgb_june_' + p0 + '_to_' + p1 +'_v2.txt')
 
                     y_true = test_label
                     y_pred = bst.predict(dtest)

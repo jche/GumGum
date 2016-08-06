@@ -26,7 +26,7 @@ def format_data(data):
 
 
 if __name__ == "__main__":
-    with open('/home/rmendoza/Desktop/XGBoost/XGB-Grid-Results5.csv', 'w') as file:
+    with open('/home/rmendoza/Desktop/XGBoost/XGB-Grid-Results6-hourly.csv', 'w') as file:
         # Inputting training and testing set
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
         wr.writerow(['J-score','AUC','Recall','Filter','Cut','Net_Savings', 'eta', 'num_round', 'day_trained', 'day_predicted','hour_traineAndTested'])
@@ -67,7 +67,7 @@ if __name__ == "__main__":
                                         dtrain,
                                         num_round,
                                         evallist)   # If error doesn't decrease in n rounds, stop early
-                        bst.dump_model('/home/rmendoza/Desktop/XGBoost/testHourly' + p0 + '_to_' + p1 + '_v2.txt')
+                        bst.dump_model('/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.txt')
 
                         y_true = test_label
                         y_pred = bst.predict(dtest)
@@ -97,4 +97,4 @@ if __name__ == "__main__":
                 #wr.writerow(['Increasing Child'])
             #wr.writerow(['Increasing Subsample','Child'])
 
-sendEmail('moralesmendozar@gmail.com','Code Done',"XGBoost-Grid-Searches_RAM.py ended running in the local RIPS computer. :P")
+sendEmail('moralesmendozar@gmail.com','Code Done',"XGBoost-trainHoursDaily.py ended running in the local RIPS computer. :P")
