@@ -6,6 +6,7 @@ import os
 import csv
 from math import sin
 import time
+from sys import maxint
 
 
 # XGBoost 101 found at http://xgboost.readthedocs.io/en/latest/python/python_intro.html
@@ -93,13 +94,32 @@ if __name__ == "__main__":
                 cut = 0.10
                 pred = pred_prop > cut
 
-                with open("/home/ubuntu/Jonathan/xgb_numbers_ensemble4.csv", "a") as file:
-                    results = [0,0,0,0,0,0]
+                optimal_results = [-maxint,0]   # o_r[1] is optimal cutoff, +/- 0.01
+                for cutoff in range(0, 31):
+                    temp_cut = cutoff/float(100)
+                    temp_pred = pred_prop > temp_cut
+                    savings = net_sav(metrics.recall_score(test_label, temp_pred),
+                                      sum(np.logical_not(temp_pred))/float(len(temp_pred)))
+                    if savings > optimal_results[0]:
+                        optimal_results[0] = savings
+                        optimal_results[1] = temp_cut
+
+                output_file = "/home/ubuntu/Jonathan/xgb_numbers_test.csv"
+                if not os.path.isfile(output_file):
+                    with open("/home/ubuntu/Jonathan/xgb_numbers_test.csv", "a") as file:
+                        wr = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
+                        wr.writerow(["Day", "Hour", "Recall", "Filter Rate",
+                                     "Savings", "Cutoff",
+                                     "Optimal Savings", "Optimal Cutoff"])
+                with open("/home/ubuntu/Jonathan/xgb_numbers_test1.csv", "a") as file:
+                    results = [0,0,0,0,0,0,0,0]
                     results[0] = day
                     results[1] = hour
                     results[2] = metrics.recall_score(test_label, pred)
                     results[3] = sum(np.logical_not(pred))/float(len(pred))
                     results[4] = net_sav(results[2], results[3])
                     results[5] = cut
+                    results[6] = optimal_results[0]
+                    results[7] = optimal_results[1]
                     wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
                     wr.writerow(results)
