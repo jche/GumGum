@@ -5,6 +5,7 @@ from sklearn import metrics
 import os
 import csv
 from math import sin
+from sys import maxint
 import time
 
 
@@ -74,12 +75,12 @@ def train_model(month, day, hour):
     return bst
 
 
-def eval_quality(single_pred, ens_pred_prop, ens_pred_round, length, test_label):
+def eval_quality(single_pred, average_ens_pred, ens_pred_round, length, test_label):
     quality = 0
-    p1 = np.abs(np.logical_not(ens_pred_round)-ens_pred_prop)   # Prop in majority vote
+    p1 = np.abs(np.logical_not(ens_pred_round)-average_ens_pred)   # Prop in majority vote
     p2 = np.ones(length) - p1   # Prop in minority vote
-    pc = np.abs(ens_pred_prop + (test_label-np.ones(length)))   # Prop correct
-    pt = np.abs(ens_pred_prop + (single_pred-np.ones(length)))   # Prop same as single_pred
+    pc = np.abs(average_ens_pred + (test_label-np.ones(length)))   # Prop correct
+    pt = np.abs(average_ens_pred + (single_pred-np.ones(length)))   # Prop same as single_pred
     for i in range(0, length):
         if single_pred[i] != test_label[i]:
             quality = quality - (1-abs(pc[i]-pt[i]))
@@ -95,7 +96,7 @@ def dynamic_cutoff(hour):
 
 
 if __name__ == "__main__":
-    ensemble_cap = 1
+    ensemble_cap = 7
     ensemble = []
     ensemble_qual = []
     for month in range(6, 7):
@@ -107,36 +108,61 @@ if __name__ == "__main__":
                 else:
                     dtest, test_label = process_data(month, day, hour+1)
 
-                single_pred = bst.predict(dtest)
-                ens_pred = []
+                single_pred_prop = bst.predict(dtest)
+                ens_pred_prop = []
                 for model in ensemble:
-                    ens_pred.append(model.predict(dtest))
+                    ens_pred_prop.append(model.predict(dtest))
 
                 # Cutoff function
-                cut = dynamic_cutoff(hour)
-                length = len(single_pred)
-                single_pred = single_pred > cut
-                for pred in ens_pred:
-                    pred = pred > cut
-                ens_pred_prop = np.sum(ens_pred, axis=0)/([float(len(ens_pred))]*length)
-                ens_pred_round = np.round(ens_pred_prop)   # Rounds down if exactly .5
+                # cut = dynamic_cutoff(hour)
+                cut = 0.1
+                length = len(single_pred_prop)
+                single_pred = single_pred_prop > cut
+                ens_pred = []
+                for i in range(0, len(ens_pred_prop)):
+                    ens_pred.append(ens_pred_prop[i] > cut)
+                average_ens_pred = np.sum(ens_pred, axis=0)/([float(len(ens_pred))]*length)
+                final_ens_pred = np.round(average_ens_pred)   # Rounds down if exactly .5
 
+                # output results
                 if len(ensemble) == ensemble_cap:
-                    with open("/home/ubuntu/Jonathan/xgb_numbers_ensemble4.csv", "a") as file:
-                        results = [0,0,0,0,0,0]
+                    optimal_results = [-maxint,0]
+                    for cutoff in range(0, 31):
+                        temp_cut = cutoff/float(100)
+                        temp_pred = []
+                        for i in range(0, len(ens_pred_prop)):
+                            temp_pred.append(ens_pred_prop[i] > temp_cut)
+                        average_temp_pred = np.sum(temp_pred, axis=0)/([float(len(temp_pred))]*length)
+                        final_temp_pred = np.round(average_temp_pred)   # Rounds down if exactly .5
+                        savings = net_sav(metrics.recall_score(test_label, final_temp_pred),
+                                          sum(np.logical_not(final_temp_pred))/float(length))
+                        if savings > optimal_results[0]:
+                            optimal_results[0] = savings
+                            optimal_results[1] = temp_cut
+                    output_file = "/home/ubuntu/Jonathan/xgb_numbers_ensemble4.csv"
+                    if not os.path.isfile(output_file):
+                        with open(output_file, "a") as file:
+                            wr = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
+                            wr.writerow(["Day", "Hour", "Recall", "Filter Rate",
+                                         "Savings", "Cutoff",
+                                         "Optimal Savings", "Optimal Cutoff"])
+                    with open(output_file, "a") as file:
+                        results = [0,0,0,0,0,0,0,0]
                         results[0] = day
                         results[1] = hour
-                        results[2] = metrics.recall_score(test_label, ens_pred_round)
-                        results[3] = sum(np.logical_not(ens_pred_round))/float(length)
+                        results[2] = metrics.recall_score(test_label, final_ens_pred)
+                        results[3] = sum(np.logical_not(final_ens_pred))/float(length)
                         results[4] = net_sav(results[2], results[3])
                         results[5] = cut
+                        results[6] = optimal_results[0]
+                        results[7] = optimal_results[1]
                         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
                         wr.writerow(results)
 
                 # Update all quality scores
-                quality = eval_quality(single_pred, ens_pred_prop, ens_pred_round, length, test_label)
+                quality = eval_quality(single_pred, average_ens_pred, final_ens_pred, length, test_label)
                 for i in range(0, len(ens_pred)):
-                    ensemble_qual[i] = eval_quality(ens_pred[i], ens_pred_prop, ens_pred_round, length, test_label)
+                    ensemble_qual[i] = eval_quality(ens_pred[i], average_ens_pred, final_ens_pred, length, test_label)
 
                 # Add to ensemble
                 if len(ensemble) == 0:

@@ -106,12 +106,12 @@ if __name__ == "__main__":
 
                 output_file = "/home/ubuntu/Jonathan/xgb_numbers_test.csv"
                 if not os.path.isfile(output_file):
-                    with open("/home/ubuntu/Jonathan/xgb_numbers_test.csv", "a") as file:
+                    with open(output_file, "a") as file:
                         wr = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
                         wr.writerow(["Day", "Hour", "Recall", "Filter Rate",
                                      "Savings", "Cutoff",
                                      "Optimal Savings", "Optimal Cutoff"])
-                with open("/home/ubuntu/Jonathan/xgb_numbers_test1.csv", "a") as file:
+                with open(output_file, "a") as file:
                     results = [0,0,0,0,0,0,0,0]
                     results[0] = day
                     results[1] = hour
@@ -121,5 +121,5 @@ if __name__ == "__main__":
                     results[5] = cut
                     results[6] = optimal_results[0]
                     results[7] = optimal_results[1]
-                    wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
+                    wr = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
                     wr.writerow(results)
