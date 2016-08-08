@@ -4,6 +4,7 @@ from scipy.sparse import csr_matrix
 from sklearn import metrics
 import os
 import csv
+from math import sin
 import time
 
 
@@ -68,56 +69,37 @@ def train_model(month, day, hour):
     bst = xgb.train(param,
                     dtrain,
                     num_round,
-                    evallist)
+                    evallist,
+                    verbose_eval=50)
     return bst
 
 
-
-def eval_quality(single_pred, ens_pred, ens_pred_sum, test_label):
+def eval_quality(single_pred, ens_pred_prop, ens_pred_round, length, test_label):
     quality = 0
-    vals = [float(len(list))]*5
-    p1 = np.sum(ens_pred, axis=0)/vals
-
-    pc = 1#percentage correct, which is p1 if ensemble is correct
-    pt = 1# percentage that correspond to new tree
-
+    p1 = np.abs(np.logical_not(ens_pred_round)-ens_pred_prop)   # Prop in majority vote
+    p2 = np.ones(length) - p1   # Prop in minority vote
+    pc = np.abs(ens_pred_prop + (test_label-np.ones(length)))   # Prop correct
+    pt = np.abs(ens_pred_prop + (single_pred-np.ones(length)))   # Prop same as single_pred
     for i in range(0, length):
         if single_pred[i] != test_label[i]:
             quality = quality - (1-abs(pc[i]-pt[i]))
-        elif ens_pred_sum[i] != test_label[i]:
+        elif ens_pred_round[i] != test_label[i]:
             quality = quality + (1-abs(p1[i]-pc[i]))
         else:
             quality = quality + (1+abs(p1[i]-p2[i]))
     return quality
 
 
-# def write_to_file(predictions, elapsed, addr):
-#     with open(addr) as file:
-#         # J score, AUC score, best recall, best filter rate, best cutoff
-#         results = [0, 0, 0, 0, elapsed]
-#         for cutoff in range(0, 31):
-#             cut = cutoff/float(100)   # Cutoff in decimal form
-#             y = predictions > cut   # If y values are greater than the cutoff
-#             recall = metrics.recall_score(test_label, y)
-#             filter_rate = sum(np.logical_not(y))/float(len(y_pred))
-#             if net_sav(recall, filter_rate) > results[0]:
-#                 results[0] = net_sav(recall, filter_rate)
-#                 results[1] = recall
-#                 results[2] = filter_rate
-#                 results[3] = cut
-#         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
-#         wr.writerow(results)
-
-
-#bst.save_model('/home/rmendoza/Desktop/xgbtemp.model')
+def dynamic_cutoff(hour):
+    return 0.05*sin(hour/4 + 0.5) + 0.07
 
 
 if __name__ == "__main__":
-    ensemble_cap = 7
+    ensemble_cap = 1
     ensemble = []
     ensemble_qual = []
     for month in range(6, 7):
-        for day in range(4, 5):
+        for day in range(4, 26):
             for hour in range(0, 24):
                 bst = train_model(month, day, hour)   # C_i-1
                 if hour == 23:
@@ -131,7 +113,7 @@ if __name__ == "__main__":
                     ens_pred.append(model.predict(dtest))
 
                 # Cutoff function
-                cut = .15
+                cut = dynamic_cutoff(hour)
                 length = len(single_pred)
                 single_pred = single_pred > cut
                 for pred in ens_pred:
@@ -139,33 +121,36 @@ if __name__ == "__main__":
                 ens_pred_prop = np.sum(ens_pred, axis=0)/([float(len(ens_pred))]*length)
                 ens_pred_round = np.round(ens_pred_prop)   # Rounds down if exactly .5
 
-                # Check out how the predictions for the next day are (Conf. Matrix)
-                recall = metrics.recall_score(test_label, ens_pred_round)
-                filter_rate = sum(np.logical_not(ens_pred_round))/float(length)
-                print "Recall is %s" % recall
-                print "Filter rate is %s" % filter_rate
-                print "Savings are %s" % net_sav(recall, filter_rate)
+                if len(ensemble) == ensemble_cap:
+                    with open("/home/ubuntu/Jonathan/xgb_numbers_ensemble4.csv", "a") as file:
+                        results = [0,0,0,0,0,0]
+                        results[0] = day
+                        results[1] = hour
+                        results[2] = metrics.recall_score(test_label, ens_pred_round)
+                        results[3] = sum(np.logical_not(ens_pred_round))/float(length)
+                        results[4] = net_sav(results[2], results[3])
+                        results[5] = cut
+                        wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
+                        wr.writerow(results)
 
-                # Evaluate quality
-                quality = 0
-                p1 = np.abs(np.logical_not(ens_pred_round)-ens_pred_prop)   # Prop in majority vote
-                p2 = np.ones(length) - p1   # Prop in minority vote
-                pc = np.abs(ens_pred_prop + (test_label-np.ones(length)))   # Prop correct
-                pt = np.abs(ens_pred_prop + (single_pred-np.ones(length)))   # Prop same as single_pred
-                for i in range(0, length):
-                    if single_pred[i] != test_label[i]:
-                        quality = quality - (1-abs(pc[i]-pt[i]))
-                    elif ens_pred_round[i] != test_label[i]:
-                        quality = quality + (1-abs(p1[i]-pc[i]))
-                    else:
-                        quality = quality + (1+abs(p1[i]-p2[i]))
+                # Update all quality scores
+                quality = eval_quality(single_pred, ens_pred_prop, ens_pred_round, length, test_label)
+                for i in range(0, len(ens_pred)):
+                    ensemble_qual[i] = eval_quality(ens_pred[i], ens_pred_prop, ens_pred_round, length, test_label)
 
                 # Add to ensemble
-                if len(ensemble) < ensemble_cap:
+                if len(ensemble) == 0:
+                    ensemble.append(bst)
+                    ensemble_qual.append(0)
+                    print "Added first model to ensemble"
+                elif len(ensemble) < ensemble_cap:
                     ensemble.append(bst)
                     ensemble_qual.append(quality)
+                    print "Added model to ensemble"
                 else:
                     if quality > min(ensemble_qual):
                         index = ensemble_qual.index(min(ensemble_qual))
+                        print "Replacing C%s because %s < %s" % (index, min(ensemble_qual), quality)
                         ensemble[index] = bst
                         ensemble_qual[index] = quality
+                        print "Ensemble qualities are %s" % ensemble_qual
