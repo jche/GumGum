@@ -1,5 +1,5 @@
 import os
-import time
+import time, gc
 import numpy as np
 import xgboost as xgb
 from sklearn import metrics
@@ -42,7 +42,7 @@ def search_cut(prob, y_test):
 def train(param, num_round):
     X_train, y_train = get_data(data[0], data[1])
     data_train = xgb.DMatrix(X_train, label=y_train)
-    return xgb.train(param, data_train, num_round, verbose_eval=0)
+    return xgb.train(param, data_train, num_round)
 
 
 def test(bst):
@@ -64,11 +64,15 @@ param = {'booster':'gbtree',   # Tree, not linear regression
          'save_period':0,   # Only saves last model
          'nthread':6,   # Number of cores used; otherwise, auto-detect
          'seed':25}
-num_round = 250   # Number of rounds of training, increasing this increases the range of output values
+num_round = 100   # Number of rounds of training, increasing this increases the range of output values
 
 data = (6, 19)
-
+print "Training"
 bst = train(param, num_round)
+print "Done Training"
+gc.collect()
+print "Testing"
 prob, y_test = test(bst)
+print "Done Testing"
 
 print search_cut(prob,y_test)
