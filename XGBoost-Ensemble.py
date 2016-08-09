@@ -4,6 +4,7 @@ from scipy.sparse import csr_matrix
 from sklearn import metrics
 import csv
 from SendEmail import sendEmail
+import time
 
 
 
@@ -26,12 +27,12 @@ def format_data(data):
 
 errorCounter = 0
 if __name__ == "__main__":
-    with open('/home/rmendoza/Desktop/XGBoost/XGB-Grid-Results7-hourly.csv', 'w') as file:
+    with open('/home/rmendoza/Desktop/XGBoost/XGB-Ensemble_1.csv', 'w') as file:
         try:
             # Inputting training and testing set
             wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
             wr.writerow(['J-score','AUC','Recall','Filter','Cut','Net_Savings', 'eta', 'num_round', 'day_trained', 'day_predicted','hour_trainedAndTested'])
-            for i in range(4,23):  #i is the day, goes to 24 to test on 25 and end. :P
+            for i in range(4,8):  #i is the day, goes to 24 to test on 25 and end. :P
                 for j in range(0,24): # j is the hour
                     num_round = 500
                     eta = 0.1
@@ -51,9 +52,13 @@ if __name__ == "__main__":
                     evallist = [(dtrain,'train'), (dtest,'eval')]
                     # Train Model 1...
                     try:
+                        bst = xgb.Booster({'nthread':4}) #init model
                         print 'Loading the model... '
-                        bst.load_model('/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.txt') # load model
-                    except:
+                        print '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.model'
+                        bst.load_model('/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.model') # load model
+                    except Exception as e:
+                        print e
+                        #time.sleep(30)
                         print "Some mistake in loading the model, so now we train again..." #pass  #to skip
                         param = {'booster':'gbtree',   # Tree, not linear regression
                              'objective':'binary:logistic',   # Output probabilities
@@ -73,7 +78,60 @@ if __name__ == "__main__":
                                     dtrain,
                                     num_round,
                                     evallist)   # If error doesn't decrease in n rounds, stop early
+                        bst.save_model('/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.model')
+                        print 'model saved'
                         bst.dump_model('/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.txt')
+                        print 'model dumped'
+                    # train model 1A and 1B
+                    # first, divide train in trainA (yhat = 0) and trainB  (yhat = 1) and
+                    y_hatTrain = bst.predict(dtrain)  #contains the 0s and 1s predicted by Model 1
+                    y_predTrain = []
+                    savings = [0]
+                    dacut = 0.09
+                    print 'beginn cutoffs'
+                    for cutoff in range(0, 31):
+                        cut = cutoff/float(100)   # Cutoff in decimal form
+                        y = y_hatTrain > cut   # If y values are greater than the cutoff
+                        # print y
+                        recall = metrics.recall_score(train_label, y)
+                        # true_negative_rate = sum(np.logical_not(np.logical_or(test_label, y)))/float(len(y_pred))
+                        filter_rate = sum(np.logical_not(y))/float(len(y_hatTrain))
+                        if recall*6.7+filter_rate > savings[0]:
+                            savings[0] = 127000*filter_rate -5200 -850000*(1-recall)
+                    print 'serious binarize'
+                    for kk in range(len(y_hatTrain)):
+                        if y_hatTrain[kk] > dacut:
+                            y_predTrain.append(1)
+                        else:
+                            y_predTrain.append(0)
+                    pred_pos = []
+                    pred_neg = []
+                    print 'done binirize'
+                    for i in range(len(y_hatTrain)):
+                        entry = train_data[i].tolist()
+                        entry.append(train_label[i])
+                        if y_predTrain[i] == 1:
+                            entry.append(1)
+                            pred_pos.append(entry)
+                        else:
+                            entry.append(0)
+                            pred_neg.append(entry)
+                    #print 'done getting TrainA, B.'
+                    pred_pos = np.array(pred_pos)
+                    pred_neg = np.array(pred_neg)
+                    #print pred_pos
+                    print 'pred_pos[0:20,-10:] = '
+                    print pred_pos[0:20,-10:]
+                    A = pred_neg[:,:-2]   #new A to train on
+                    yA = pred_neg[:,-2]   # new testA
+                    B = pred_pos[:,:-2]   # new B to train on
+                    yB = pred_pos[:,-2]   # new testB to train on ...
+                    #print 'B[0:20,-10:] = ',B[0:20,-10:]
+                    # print 'yB[1:20] = '
+                    # print yB[0:20]
+                    time.sleep(30)
+                    # print 'y = y_pred > cut' =
+
                     ######### Predict/test the model on next day
                     y_true = test_label
                     y_pred = bst.predict(dtest)
@@ -100,13 +158,14 @@ if __name__ == "__main__":
                 print '-------------------------------------'
             print '_______________________________________________________________________'
             print '_______________________________________________________________________'
-        except:
-            pass
+        except Exception as e:
+            print e
+            #pass
             errorCounter += 1
-            print 'There was an error'
+            print 'There was an error, count ', errorCounter
             subjeto = 'Error on code... countOfError' + str(errorCounter)
-            sendEmail('moralesmendozar@gmail.com',subjeto,"XGBoost-trainHoursDaily.py encountered an error. :P")
+            #sendEmail('moralesmendozar@gmail.com',subjeto,"XGBoost-trainHoursDaily.py encountered an error. :P")
             #time.sleep(20)  #sleep
 
 
-sendEmail('moralesmendozar@gmail.com','Code Done2',"XGBoost-trainHoursDaily.py ended running in the local RIPS computer. :P")
+#sendEmail('moralesmendozar@gmail.com','Code Done2',"XGBoost-trainHoursDaily.py ended running in the local RIPS computer. :P")
