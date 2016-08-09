@@ -1,10 +1,10 @@
 import xgboost as xgb
 import numpy as np
+from scipy.sparse import csr_matrix
 from sklearn import metrics
-import Sparse_Matrix_IO as smio
-import csv #, operator
-from sklearn.cross_validation import KFold #StratifiedKFold as
-#import matplotlib.pylab as plt
+import csv
+from sklearn.cross_validation import KFold #
+
 import time, gc, os
 try:
     import cPickle as pickle
@@ -19,10 +19,14 @@ def get_data(month, day):
                            str(day).rjust(2, "0"),
                            "day_samp_new_large.npy")
     with open(addr_in, "r") as file_in:
-        data = smio.load_sparse_csr(file_in)
+        loader = np.load(file_in)
+        data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
+    y = data[:,-1].toarray()
+    all_cols = np.arange(data.shape[1])
+    cols_to_delete = [-1]
     X = data[:, :-1]
-    y = data[:, -1]
     return X, y
+
 
 
 def train(param, num_round, theta):
@@ -86,7 +90,7 @@ if __name__ == "__main__":
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
         data = (6, 19)
         for theta in np.linspace(0.01, 1, 100):
-            kf = KFold(int(500000*theta), n_folds = 3, shuffle=True)
+            kf = KFold(int(500000*theta), n_folds=3, shuffle=True)
             results = [0]*11
             # Setting parameters
             i = 1
