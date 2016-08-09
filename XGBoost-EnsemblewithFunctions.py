@@ -110,6 +110,10 @@ def getAyAByB(y_hatTrain,train_data,train_label):
     #print pred_pos
     #print 'pred_pos[0:20,-10:] = '
     #print pred_pos[0:20,-10:]
+    print 'Height of pred_neg is %s' % np.size(pred_neg, 0)
+    #print 'Width of pred_neg is %s' % np.size(pred_neg, 1)
+    print 'Height of pred_pos is %s' % np.size(pred_pos, 0)
+    #print 'Width of pred_pos is %s' % np.size(pred_pos, 1)
     A = pred_neg[:,:-2]   #new A to train on
     yA = pred_neg[:,-2]   # new testA
     B = pred_pos[:,:-2]   # new B to train on
@@ -161,6 +165,10 @@ def getAyAByBtest(y_hatTrain,train_data,train_label):
     #print pred_pos
     #print 'pred_pos[0:20,-10:] = '
     #print pred_pos[0:20,-10:]
+    print 'TESTHeight of pred_neg is %s' % np.size(pred_neg, 0)
+    #print 'Width of pred_neg is %s' % np.size(pred_neg, 1)
+    print 'TESTHeight of pred_pos is %s' % np.size(pred_pos, 0)
+    #print 'Width of pred_pos is %s' % np.size(pred_pos, 1)
     A = pred_neg[:,:-2]   #new A to train on
     yA = pred_neg[:,-2]   # new testA
     B = pred_pos[:,:-2]   # new B to train on
@@ -169,102 +177,102 @@ def getAyAByBtest(y_hatTrain,train_data,train_label):
 
 errorCounter = 0
 if __name__ == "__main__":
-    with open('/home/rmendoza/Desktop/XGBoost/XGB-Ensemble_1.csv', 'w') as file:
-        try:
-            # Inputting training and testing set
-            wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
-            wr.writerow(['Net_Savings', 'num_round', 'day_trained', 'day_predicted','hour_trainedAndTested'])
-            for i in range(4,25):  #i is the day, goes to 24 to test on 25 and end. :P
-                for j in range(0,24): # j is the hour
-                    print 'Beginning   day = ', i, '  hour =  ', j
-                    num_round = 500
-                    eta = 0.1
-                    alpha = 0
-                    ph0 = str(j).rjust(2,'0')  #the hour on which to train and test
-                    p0 = str(i).rjust(2,'0')  #the day to train
-                    p1 = str(i+1).rjust(2,'0')  #the day to test
-                    #train_data, train_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p0+".npy")
-                    train_data, train_label = format_data('/media/54D42AE2D42AC658/DataHourly/output_new_06'+p0+ph0+'.npy')
-                    dtrain = xgb.DMatrix(train_data, label=train_label)
-                    #test_data, test_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p1+".npy")
-                    test_data, test_label = format_data('/media/54D42AE2D42AC658/DataHourly/output_new_06'+p1+ph0+'.npy')
-                    dtest = xgb.DMatrix(test_data, label=test_label)
-                    evallist = [(dtrain,'train'), (dtest,'eval')]
+    with open('/home/rmendoza/Desktop/XGBoost/XGB-Ensemble_1test.csv', 'w') as file:
+        #try:
+        # Inputting training and testing set
+        wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
+        wr.writerow(['Net_Savings', 'num_round', 'day_trained', 'day_predicted','hour_trainedAndTested'])
+        for i in range(5,25):  #i is the day, goes to 24 to test on 25 and end. :P
+            for j in range(11,24): # j is the hour
+                print 'Beginning   day = ', i, '  hour =  ', j
+                num_round = 500
+                eta = 0.1
+                alpha = 0
+                ph0 = str(j).rjust(2,'0')  #the hour on which to train and test
+                p0 = str(i).rjust(2,'0')  #the day to train
+                p1 = str(i+1).rjust(2,'0')  #the day to test
+                #train_data, train_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p0+".npy")
+                train_data, train_label = format_data('/media/54D42AE2D42AC658/DataHourly/output_new_06'+p0+ph0+'.npy')
+                dtrain = xgb.DMatrix(train_data, label=train_label)
+                #test_data, test_label = format_data("/home/kbhalla/Desktop/Data/day_samp-06-"+p1+".npy")
+                test_data, test_label = format_data('/media/54D42AE2D42AC658/DataHourly/output_new_06'+p1+ph0+'.npy')
+                dtest = xgb.DMatrix(test_data, label=test_label)
+                evallist = [(dtrain,'train'), (dtest,'eval')]
 
-                    modName = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.model'
-                    dumpname = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.txt'
-                    bst = getBst(dtrain, evallist, train_label, modName,num_round, eta,dumpname)
+                modName = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.model'
+                dumpname = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2.txt'
+                bst = getBst(dtrain, evallist, train_label, modName,num_round, eta,dumpname)
 
-                    # train model 1A and 1B
-                    # first, divide train in trainA (yhat = 0) and trainB  (yhat = 1) and
-                    print 'predicting on dtrain...'
-                    y_hatTrain = bst.predict(dtrain)
-                    A, yA, B, yB = getAyAByB(y_hatTrain,train_data,train_label)
+                # train model 1A and 1B
+                # first, divide train in trainA (yhat = 0) and trainB  (yhat = 1) and
+                print 'predicting on dtrain...'
+                y_hatTrain = bst.predict(dtrain)
+                A, yA, B, yB = getAyAByB(y_hatTrain,train_data,train_label)
 
-                    dtrainA = xgb.DMatrix(A, label=yA)
-                    dtrainB = xgb.DMatrix(B, label=yB)
-                    evallistA = [(dtrainA,'train'), (dtest,'eval')]
-                    evallistB = [(dtrainB,'train'), (dtest,'eval')]
-                    #### Create new models 1A and 1B
-                    modNameA = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_A.model'
-                    dumpnameA = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_A.txt'
-                    modNameB = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_B.model'
-                    dumpnameB = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_B.txt'
-                    bstA = getBst(dtrainA, evallistA, yA, modNameA,num_round, eta,dumpnameA)
-                    bstB = getBst(dtrainB, evallistB, yB, modNameB,num_round, eta,dumpnameB)
-                    #print 'B[0:20,-10:] = ',B[0:20,-10:]
-                    # print 'yB[1:20] = '
-                    # print yB[0:20]
-                    # print 'y = y_pred > cut' =
+                dtrainA = xgb.DMatrix(A, label=yA)
+                dtrainB = xgb.DMatrix(B, label=yB)
+                evallistA = [(dtrainA,'train'), (dtest,'eval')]
+                evallistB = [(dtrainB,'train'), (dtest,'eval')]
+                #### Create new models 1A and 1B
+                modNameA = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_A.model'
+                dumpnameA = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_A.txt'
+                modNameB = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_B.model'
+                dumpnameB = '/home/rmendoza/Desktop/XGBoost/testHourly/testHourly' + p0 + '_to_' + p1 + ph0 + '_v2_B.txt'
+                bstA = getBst(dtrainA, evallistA, yA, modNameA,num_round, eta,dumpnameA)
+                bstB = getBst(dtrainB, evallistB, yB, modNameB,num_round, eta,dumpnameB)
+                #print 'B[0:20,-10:] = ',B[0:20,-10:]
+                # print 'yB[1:20] = '
+                # print yB[0:20]
+                # print 'y = y_pred > cut' =
 
-                    ######### Predict/test the model on next day
-                    y_true = test_label
-                    y_pred = bst.predict(dtest)
-                    ### Get the Xa and Xb for the predicted ones and zeroes
-                    testA, testyA, testB, testyB = getAyAByBtest(y_pred,test_data,test_label)
-                    #### Now simply predict on testA and testB with models 1A and 1B and get the numbers...
-                    dtestA = xgb.DMatrix(testA, label=testyA)
-                    y_predA = bstA.predict(dtestA)
-                    dtestB = xgb.DMatrix(testB, label=testyB)
-                    y_predB = bstB.predict(dtestB)
-                    #print 'y_predB', y_predB
-                    ### Getting the splits of negatives and positives for each one
-                    testAneg, testyAneg, testApos, testyApos = getAyAByBtest(y_predA,testA,testyA)
-                    testBneg, testyBneg, testBpos, testyBpos = getAyAByBtest(y_predB,testB,testyB)
-                    ### Get the recall and Net Savings
-                    labels = []
-                    preds = []
-                    labels.extend(testyAneg.tolist())
-                    preds.extend([0]*len(testyAneg))
-                    labels.extend(testyApos.tolist())
-                    preds.extend([1]*len(testyApos))
-                    labels.extend(testyBneg.tolist())
-                    preds.extend([0]*len(testyBneg))
-                    labels.extend(testyBpos.tolist())
-                    preds.extend([1]*len(testyBpos))
-                    labels = np.array(labels)
-                    preds = np.array(preds)
-                    recall = metrics.recall_score(labels, preds)
-                    filter_rate = sum(np.logical_not(preds))/float(len(preds))
-                    savings = 127000*filter_rate -5200 -850000*(1-recall)
-                    #['Net_Savings', 'num_round', 'day_trained', 'day_predicted','hour_trainedAndTested']
-                    results = [savings, num_round,p0, p1,ph0]
-                    wr.writerow(results)
-                    print 'done for the hour', j
-                    print '--------------------------'
-                print 'done for the DAY', i
-                print '-------------------------------------'
-                print '-------------------------------------'
-            print '_______________________________________________________________________'
-            print '_______________________________________________________________________'
-        except Exception as e:
-            print e
-            print 'ooops'
-            #pass
-            errorCounter += 1
-            print 'There was an error, count ', errorCounter
-            subjeto = 'Error on code... countOfError' + str(errorCounter)
-            #sendEmail('moralesmendozar@gmail.com',subjeto,"XGBoost-trainHoursDaily.py encountered an error. :P")
+                ######### Predict/test the model on next day
+                y_true = test_label
+                y_pred = bst.predict(dtest)
+                ### Get the Xa and Xb for the predicted ones and zeroes
+                testA, testyA, testB, testyB = getAyAByBtest(y_pred,test_data,test_label)
+                #### Now simply predict on testA and testB with models 1A and 1B and get the numbers...
+                dtestA = xgb.DMatrix(testA, label=testyA)
+                y_predA = bstA.predict(dtestA)
+                dtestB = xgb.DMatrix(testB, label=testyB)
+                y_predB = bstB.predict(dtestB)
+                #print 'y_predB', y_predB
+                ### Getting the splits of negatives and positives for each one
+                testAneg, testyAneg, testApos, testyApos = getAyAByBtest(y_predA,testA,testyA)
+                testBneg, testyBneg, testBpos, testyBpos = getAyAByBtest(y_predB,testB,testyB)
+                ### Get the recall and Net Savings
+                labels = []
+                preds = []
+                labels.extend(testyAneg.tolist())
+                preds.extend([0]*len(testyAneg))
+                labels.extend(testyApos.tolist())
+                preds.extend([1]*len(testyApos))
+                labels.extend(testyBneg.tolist())
+                preds.extend([0]*len(testyBneg))
+                labels.extend(testyBpos.tolist())
+                preds.extend([1]*len(testyBpos))
+                labels = np.array(labels)
+                preds = np.array(preds)
+                recall = metrics.recall_score(labels, preds)
+                filter_rate = sum(np.logical_not(preds))/float(len(preds))
+                savings = 127000*filter_rate -5200 -850000*(1-recall)
+                #['Net_Savings', 'num_round', 'day_trained', 'day_predicted','hour_trainedAndTested']
+                results = [savings, num_round,p0, p1,ph0]
+                wr.writerow(results)
+                print 'done for the hour', j
+                print '--------------------------'
+            print 'done for the DAY', i
+            print '-------------------------------------'
+            print '-------------------------------------'
+        print '_______________________________________________________________________'
+        print '_______________________________________________________________________'
+        # except Exception as e:
+        #     print e
+        #     print 'ooops'
+        #     #pass
+        #     errorCounter += 1
+        #     print 'There was an error, count ', errorCounter
+        #     subjeto = 'Error on code... countOfError' + str(errorCounter)
+        #     #sendEmail('moralesmendozar@gmail.com',subjeto,"XGBoost-trainHoursDaily.py encountered an error. :P")
             #time.sleep(20)  #sleep
 
 
