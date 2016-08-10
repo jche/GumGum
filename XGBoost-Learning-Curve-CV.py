@@ -17,7 +17,7 @@ def get_data(month, day):
     addr_in = os.path.join(root,
                            str(month).rjust(2, "0"),
                            str(day).rjust(2, "0"),
-                           "day_samp_new_large.npy")
+                           "day_samp_large_newer.npy")
     with open(addr_in, "r") as file_in:
         loader = np.load(file_in)
         data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
@@ -29,7 +29,7 @@ def get_data(month, day):
 
 def train(param, num_round, theta):
     X_train, y_train = get_data(data[0], data[1])
-    k = int(theta*500000)
+    k = int(theta*1000000)
     X_train, y_train = X_train[:k,:], y_train[:k]
     X_train, y_train = X_train[train_index], y_train[train_index]
     data_train = xgb.DMatrix(X_train, label=y_train)
@@ -83,12 +83,12 @@ if __name__ == "__main__":
     # for key in importance:
     #     if key[1] > 0:
     #         s.append(key[0][1:])
-    with open('/home/ubuntu/Krishan/Results/XGB-Learning-Curve-CV.csv', 'w') as file:
+    with open('/home/ubuntu/Krishan/Results/XGB-Learning-Curve-CV-MoreData.csv', 'w') as file:
         # Inputting training and testing set
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
         data = (6, 19)
         for theta in np.linspace(0.01, 1, 100):
-            kf = KFold(int(500000*theta), n_folds=3, shuffle=True)
+            kf = KFold(int(1000000*theta), n_folds=3, shuffle=True)
             results = [0]*11
             # Setting parameters
             i = 1
