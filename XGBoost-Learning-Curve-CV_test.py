@@ -122,6 +122,7 @@ if __name__ == "__main__":
         # Inputting training and testing set
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
         data = (6, 19)
+        wr.writerow(['score', 'recall_best', 'filter_rate_best', 'cut_best', 'net_savings_best','', '', '', '',''])
         for theta in np.linspace(0.01, 1, 100):
             kf = KFold(int(500000*theta), n_folds=3, shuffle=True)
             results = [0]*11
@@ -157,10 +158,12 @@ if __name__ == "__main__":
                 print "Testing"
                 results_test = test(bst, 1, 1)
                 print "Done Testing"
+                cutt = results_test[3]
+                results_testNotCV = testNotCV(bst, 1, 1, cutt)
                 print "------------------"
                 print theta
                 print "------------------"
-                temp = results_train+results_test+[theta]
+                temp = results_train+results_test+results_testNotCV+[theta]
                 print temp
                 print "Finished fold %s" % i
                 i += 1
