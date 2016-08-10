@@ -123,6 +123,7 @@ def getAyAByB(y_hatTrain,train_data,train_label):
 def getAyAByBtest(y_hatTrain,train_data,train_label):
     ## Function recieves the y predicted for the test matrix and gives the x and y for the 0s and 1s
     ####y_hatTrain = bst.predict(dtrain)  #contains the 0s and 1s predicted by Model 1
+    posempty = 0
     y_predTrain = []
     savings = [0]
     dacut = 0.09
@@ -169,21 +170,28 @@ def getAyAByBtest(y_hatTrain,train_data,train_label):
     #print 'Width of pred_neg is %s' % np.size(pred_neg, 1)
     print 'TESTHeight of pred_pos is %s' % np.size(pred_pos, 0)
     #print 'Width of pred_pos is %s' % np.size(pred_pos, 1)
-    A = pred_neg[:,:-2]   #new A to train on
-    yA = pred_neg[:,-2]   # new testA
-    B = pred_pos[:,:-2]   # new B to train on
-    yB = pred_pos[:,-2]   # new testB to train on ...
-    return A, yA, B, yB
+    if np.size(pred_pos,0)== 0:
+        A = pred_neg[:,:-2]   #new A to train on
+        yA = pred_neg[:,-2]   # new testA
+        B = []   # new B to train on
+        yB = []   # new testB to train on ...
+        posempty = 1
+    else:
+        A = pred_neg[:,:-2]   #new A to train on
+        yA = pred_neg[:,-2]   # new testA
+        B = pred_pos[:,:-2]   # new B to train on
+        yB = pred_pos[:,-2]   # new testB to train on ...
+    return A, yA, B, yB, posempty
 
 errorCounter = 0
 if __name__ == "__main__":
-    with open('/home/rmendoza/Desktop/XGBoost/XGB-Ensemble_1test.csv', 'w') as file:
+    with open('/home/rmendoza/Desktop/XGBoost/XGB-Ensemble_1round2.csv', 'w') as file:
         #try:
         # Inputting training and testing set
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
         wr.writerow(['Net_Savings', 'num_round', 'day_trained', 'day_predicted','hour_trainedAndTested'])
-        for i in range(5,25):  #i is the day, goes to 24 to test on 25 and end. :P
-            for j in range(11,24): # j is the hour
+        for i in range(4,25):  #i is the day, goes to 24 to test on 25 and end. :P
+            for j in range(0,24): # j is the hour
                 print 'Beginning   day = ', i, '  hour =  ', j
                 num_round = 500
                 eta = 0.1
@@ -229,7 +237,7 @@ if __name__ == "__main__":
                 y_true = test_label
                 y_pred = bst.predict(dtest)
                 ### Get the Xa and Xb for the predicted ones and zeroes
-                testA, testyA, testB, testyB = getAyAByBtest(y_pred,test_data,test_label)
+                testA, testyA, testB, testyB, abc = getAyAByBtest(y_pred,test_data,test_label)
                 #### Now simply predict on testA and testB with models 1A and 1B and get the numbers...
                 dtestA = xgb.DMatrix(testA, label=testyA)
                 y_predA = bstA.predict(dtestA)
@@ -237,19 +245,21 @@ if __name__ == "__main__":
                 y_predB = bstB.predict(dtestB)
                 #print 'y_predB', y_predB
                 ### Getting the splits of negatives and positives for each one
-                testAneg, testyAneg, testApos, testyApos = getAyAByBtest(y_predA,testA,testyA)
-                testBneg, testyBneg, testBpos, testyBpos = getAyAByBtest(y_predB,testB,testyB)
+                testAneg, testyAneg, testApos, testyApos, posemptyA = getAyAByBtest(y_predA,testA,testyA)
+                testBneg, testyBneg, testBpos, testyBpos, posemptyB = getAyAByBtest(y_predB,testB,testyB)
                 ### Get the recall and Net Savings
                 labels = []
                 preds = []
                 labels.extend(testyAneg.tolist())
                 preds.extend([0]*len(testyAneg))
-                labels.extend(testyApos.tolist())
-                preds.extend([1]*len(testyApos))
+                if posemptyA == 0:
+                    labels.extend(testyApos.tolist())
+                    preds.extend([1]*len(testyApos))
                 labels.extend(testyBneg.tolist())
                 preds.extend([0]*len(testyBneg))
-                labels.extend(testyBpos.tolist())
-                preds.extend([1]*len(testyBpos))
+                if posemptyB == 0:
+                    labels.extend(testyBpos.tolist())
+                    preds.extend([1]*len(testyBpos))
                 labels = np.array(labels)
                 preds = np.array(preds)
                 recall = metrics.recall_score(labels, preds)
