@@ -102,10 +102,8 @@ if __name__ == "__main__":
         for day in range(19, 26):
             bst = train_model(month, day)
             for hour in range(0, 24):
-                if hour == 23:
-                    dtest, test_label = process_data(month, day+1, 0)
-                else:
-                    dtest, test_label = process_data(month, day, hour+1)
+
+                dtest, test_label = process_data(month, day, hour)
 
                 pred_prop = bst.predict(dtest)
                 pred = pred_prop > cut
