@@ -76,3 +76,14 @@ def process(margin, entry, result, mode):
         banner_cat[2] = 1
     sd.add_to_result(result, (width, height), banners_)
     result.extend(banner_cat)
+
+
+def get_hearder():
+    bidder_id = ("bidder_id", 35)
+    vertical_id = ("vertical_id", 16)
+    bid_floor = ("bid_floor", 9)
+    format = ("format", len(formats_))
+    product = ("product", 6)
+    banner = ("banner", 3+len(banners_)+1)
+
+    return [bidder_id, vertical_id, bid_floor, format, product, banner]

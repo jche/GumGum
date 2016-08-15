@@ -50,3 +50,13 @@ def IAB_parser(str):
         s = str.split("-")  # Ignore sub-category like IAB1-3
         str = s[0]
     return int(str)
+
+
+def get_hearder():
+    site_typeid = ("site_typeid", 4)
+    site_cat = ("site_cat", 27)
+    site_pcat = ("site_pcat", 27)
+    domain = ("domain", len(domains_)+1)
+    browser = ("browser", len(browsers_)+1)
+
+    return [site_typeid, site_cat, site_pcat, domain, browser]

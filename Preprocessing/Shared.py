@@ -1,11 +1,18 @@
-import os
+import os, json
+
+
+dicts_root_ = "dicts"
 
 
 def get_dict(var):
-    dicts_root_ = "dicts"
     with open(os.path.join(dicts_root_, "dict_"+var+".txt"), "r") as file_in:
         dict_var = [line.rstrip("\r\n") for line in file_in]
     return dict_var
+
+
+def get_dict_json(var):
+    with open(os.path.join(dicts_root_, var), "r") as file_in:
+        return json.load(file_in)
 
 
 def binarize(result, item, length):
