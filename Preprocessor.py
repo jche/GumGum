@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import time
 import numpy as np
@@ -10,16 +11,44 @@ from Preprocessing import Driver
 start = time.time()
 
 
+def get_io_addr_hour():
+    # may = [(5, i, j) for i in range(1, 8) for j in range(17, 18)]
+    may = [(5, i, 17) for i in range(1, 8)]
+    # june = [(6, i, j) for i in range(20, 21) for j in range(1)]
+    june = []
+    root = "/mnt/rips2/2016"
+
+    list_io_addr = []
+    for date in may+june:
+        month = date[0]
+        day = date[1]
+        hour = date[2]
+        addr_io = os.path.join(root,
+                               str(month).rjust(2, "0"),
+                               str(day).rjust(2, "0"),
+                               str(hour).rjust(2, "0"))
+        addr_in = os.path.join(addr_io, "output_neg_raw")
+        addr_out = os.path.join(addr_io, "output_neg_newer.npy")
+        list_io_addr.append((addr_in, addr_out))
+
+    return list_io_addr
+
+
 def get_io_addr_day_samp():
-    # may = [(5, i) for i in range(1, 8)]
-    may = []
-    june = [(6, i) for i in range(19, 21)]
+    may = [(5, i) for i in range(1, 32)]
+    # may = []
+    june = [(6, i) for i in range(1, 4)]
     # june = []
+    mode_in = "neg"
+
+    if mode_in == "normal":
+        filename_in = "day_samp_raw"
+        filename_out = "day_samp_newer.npy"
+    else:
+        filename_in = "PosNeg/day_samp_raw_{}".format(mode_in)
+        filename_out = "PosNeg/day_samp_newer_{}.npy".format(mode_in)
 
     root = "/mnt/rips2/2016"
-    filename_in = "day_samp_raw"
-    filename_out = "day_samp_new.npy"
-
     list_io_addr = []
     for item in may+june:
         month = item[0]
@@ -37,12 +66,12 @@ def get_io_addr_day_samp():
 def get_io_addr_random_sample():
     list_io_addr = []
     root = "/home/ubuntu/random_samples"
-    prefix = ["all"]
+    prefix = ["new", "all", ""]
     suffix = [i for i in range(6)]
     for i in prefix:
         for j in suffix:
             file_name = i+"data"+str(j)
-            addr_in = os.path.join(root, file_name+".txt")
+            addr_in = os.path.join(root, file_name+"_raw")
             addr_out = os.path.join(root, file_name+"_new.npy")
             list_io_addr.append((addr_in, addr_out))
     return list_io_addr
@@ -56,6 +85,7 @@ def crawl(io_addr):
     if os.path.isfile(addr_in):
         with open(addr_in, "r") as file_in:
             print "Processing {}".format(addr_in)
+            sys.stdout.flush()
             for line in file_in:
                 try:
                     entry = json.loads(line)
@@ -76,6 +106,7 @@ def crawl(io_addr):
 
     else:
         print "\nFile Missing: {}\n".format(addr_in)
+        sys.stdout.flush()
 
     return dumped
 
@@ -90,5 +121,7 @@ if __name__ == '__main__':
         dumped += result
 
     print "{} lines dumped".format(dumped)
+    sys.stdout.flush()
 
 print "Completed in {} seconds\n".format(round(time.time()-start, 2))
+sys.stdout.flush()
