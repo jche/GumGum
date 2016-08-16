@@ -28,8 +28,8 @@ def get_data(month, day, hour=-1, ratio=-1):
     else:
         ratio = ratio/float(100)
         if hour == -1:
-            data_pos = os.path.join(addr_day,'PosNeg/day_samp_newer_pos.npy')
-            data_neg = os.path.join(addr_day,'PosNeg/day_samp_newer_neg.npy')
+            data_pos = os.path.join(addr_day,'PosNeg/day_samp__newer_large_pos.npy')
+            data_neg = os.path.join(addr_day,'PosNeg/day_samp_newer__large_neg.npy')
         else:
             data_pos = os.path.join(addr_day,p2, 'output_pos_newer.npy')
             data_neg = os.path.join(addr_day,p2, 'output_neg_newer.npy')
@@ -55,7 +55,7 @@ def format_data(month, day, hour = -1, ratio = -1):
 
 
 def net_sav(r,f):
-    sav = -5200+127000*f-850000*(1-r)
+    sav = -5200+123000*f-600000*(1-r)
     return sav
 
 
@@ -99,43 +99,47 @@ def train_model(month, day):
 cut = 0.1
 if __name__ == "__main__":
     for month in range(6, 7):
-        for day in range(19, 26):
-            bst = train_model(month, day)
-            for hour in range(0, 24):
+        for day in range(1, 32):
+            try:
+                bst = train_model(month, day)
+                for hour in range(0, 24):
 
-                dtest, test_label = process_data(month, day, hour)
+                    dtest, test_label = process_data(month, day, hour)
 
-                pred_prop = bst.predict(dtest)
-                pred = pred_prop > cut
+                    pred_prop = bst.predict(dtest)
+                    pred = pred_prop > cut
 
-                optimal_results = [-maxint,0]   # o_r[1] is optimal cutoff, +/- 0.01
-                for cutoff in range(0, 31):
-                    temp_cut = cutoff/float(100)
-                    temp_pred = pred_prop > temp_cut
-                    savings = net_sav(metrics.recall_score(test_label, temp_pred),
-                                      sum(np.logical_not(temp_pred))/float(len(temp_pred)))
-                    if savings > optimal_results[0]:
-                        optimal_results[0] = savings
-                        optimal_results[1] = temp_cut
+                    optimal_results = [-maxint,0]   # o_r[1] is optimal cutoff, +/- 0.01
+                    for cutoff in range(0, 41):
+                        temp_cut = cutoff/float(100)
+                        temp_pred = pred_prop > temp_cut
+                        savings = net_sav(metrics.recall_score(test_label, temp_pred),
+                                          sum(np.logical_not(temp_pred))/float(len(temp_pred)))
+                        if savings > optimal_results[0]:
+                            optimal_results[0] = savings
+                            optimal_results[1] = temp_cut
 
-                output_file = "/home/ubuntu/Rodrigo/Ensemble-Results.csv"
-                if not os.path.isfile(output_file):
+                    output_file = "/home/ubuntu/Krishan/Results/OptimalXGB-Final.csv"
+                    if not os.path.isfile(output_file):
+                        with open(output_file, "a") as file:
+                            wr = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
+                            wr.writerow(["Day", "Hour", "Recall", "Filter Rate",
+                                         "Savings", "Cutoff",
+                                         "Optimal Savings", "Optimal Cutoff"])
                     with open(output_file, "a") as file:
-                        wr = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
-                        wr.writerow(["Day", "Hour", "Recall", "Filter Rate",
-                                     "Savings", "Cutoff",
-                                     "Optimal Savings", "Optimal Cutoff"])
-                with open(output_file, "a") as file:
-                    results = [0,0,0,0,0,0,0,0]
-                    results[0] = day
-                    results[1] = hour
-                    results[2] = metrics.recall_score(test_label, pred)
-                    results[3] = sum(np.logical_not(pred))/float(len(pred))
-                    results[4] = net_sav(results[2], results[3])
-                    results[5] = cut
-                    results[6] = optimal_results[0]
-                    results[7] = optimal_results[1]
-                    wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
-                    wr.writerow(results)
+                        results = [0,0,0,0,0,0,0,0]
+                        results[0] = day
+                        results[1] = hour
+                        results[2] = metrics.recall_score(test_label, pred)
+                        results[3] = sum(np.logical_not(pred))/float(len(pred))
+                        results[4] = net_sav(results[2], results[3])
+                        results[5] = cut
+                        results[6] = optimal_results[0]
+                        results[7] = optimal_results[1]
+                        wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
+                        wr.writerow(results)
 
-                cut = optimal_results[1]
+                    cut = optimal_results[1]
+            except:
+                print "%s/%s not in range" %(month, day)
+                pass
