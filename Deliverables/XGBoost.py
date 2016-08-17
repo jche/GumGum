@@ -6,6 +6,7 @@ Training and testing the XG Boost model
 import xgboost as xgb
 import numpy as np
 import Sparse_Matrix_IO as smio
+#  A method to load in a sparse csr matrix
 from sklearn import metrics
 import os
 import csv
@@ -15,7 +16,7 @@ from sys import maxint
 
 def get_data(month, day, hour, ratio):
     """
-
+    Takes in processed data as a sparse_csr matrix. We keep this format for memory efficiency
     :param month:
     :param day:
     :param hour:
@@ -29,16 +30,16 @@ def get_data(month, day, hour, ratio):
     p2 = str(hour).rjust(2,'0')
     if ratio == -1:
         if hour == -1:
-            data = os.path.join(addr_day,'day_samp_newer.npy')
+            data = os.path.join(addr_day,'day_samp_newer.npy')                 # Data for a day
         else:
-            data = os.path.join(addr_day,p2, 'output_newer.npy')
+            data = os.path.join(addr_day,p2, 'output_newer.npy')               # Data for an hour
         d = smio.load_sparse_csr(data)
         return d
     else:
         ratio = ratio/float(100)
         if hour == -1:
-            data_pos = os.path.join(addr_day,'PosNeg/day_samp__newer_large_pos.npy')
-            data_neg = os.path.join(addr_day,'PosNeg/day_samp_newer_large_neg.npy')
+            data_pos = os.path.join(addr_day,'PosNeg/day_samp__newer_pos.npy') # Matrix of successful requests
+            data_neg = os.path.join(addr_day,'PosNeg/day_samp_newer_neg.npy')  # Matrix of unsuccessful requests
         else:
             data_pos = os.path.join(addr_day,p2, 'output_pos_newer.npy')
             data_neg = os.path.join(addr_day,p2, 'output_neg_newer.npy')
