@@ -20,9 +20,9 @@ def get_data(month, day, hour=-1, ratio=-1):
     p2 = str(hour).rjust(2,'0')
     if ratio == -1:
         if hour == -1:
-            data = os.path.join(addr_day,'day_samp_newer.npy')
+            data = os.path.join(addr_day,'Old_Data/day_samp_bin.npy')
         else:
-            data = os.path.join(addr_day,p2, 'output_newer.npy')
+            data = os.path.join(addr_day,p2, 'output_bin.npy')
         d = smio.load_sparse_csr(data)
         return d
     else:
@@ -67,7 +67,7 @@ def process_data(month, day, hour = -1, ratio = -1):
 
 
 def train_model(month, day):
-    dtrain, train_label = process_data(month, day -1 ,ratio= 125)
+    dtrain, train_label = process_data(month, day -1)
 
     p = sum(train_label)   # number of ones
     n = len(train_label) - p   # number of zeros
@@ -99,7 +99,7 @@ def train_model(month, day):
 cut = 0.1
 if __name__ == "__main__":
     for month in range(6, 7):
-        for day in range(1, 32):
+        for day in range(19, 32):
             try:
                 bst = train_model(month, day)
                 for hour in range(0, 24):
@@ -119,7 +119,7 @@ if __name__ == "__main__":
                             optimal_results[0] = savings
                             optimal_results[1] = temp_cut
 
-                    output_file = "/home/ubuntu/Krishan/Results/OptimalXGB-Final.csv"
+                    output_file = "/home/ubuntu/Krishan/Results/OptimalXGB-Bin.csv"
                     if not os.path.isfile(output_file):
                         with open(output_file, "a") as file:
                             wr = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
