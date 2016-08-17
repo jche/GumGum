@@ -1,7 +1,6 @@
-'''
+"""
 Training an SVM model
-'''
-
+"""
 import numpy as np
 import os
 from Get_Data import get

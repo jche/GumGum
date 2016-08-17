@@ -1,6 +1,6 @@
-'''
+"""
 Predicting the results of our SVM Model
-'''
+"""
 
 import numpy as np
 from Get_Data import get
@@ -16,12 +16,12 @@ except:
 
 
 def netsav(recall, filtered):
-    '''
+    """
     Outputs the monetary values for the model
     :param recall:
     :param filtered:
     :return: Savings from infrastructure reduction, Net RTB Income Lost, and Net Savings
-    '''
+    """
     InfrastruceReduction = 123000*filtered
     IncomeLost = 600000*(1-recall)
     NetSavings = InfrastruceReduction - IncomeLost - 5200

@@ -1,3 +1,7 @@
+'''
+Training and testing the XG Boost model
+'''
+
 import xgboost as xgb
 import numpy as np
 import Sparse_Matrix_IO as smio
@@ -5,7 +9,6 @@ from sklearn import metrics
 import os
 import csv
 from sys import maxint
-import time
 
 
 # XGBoost 101 found at http://xgboost.readthedocs.io/en/latest/python/python_intro.html
@@ -20,16 +23,16 @@ def get_data(month, day, hour=-1, ratio=-1):
     p2 = str(hour).rjust(2,'0')
     if ratio == -1:
         if hour == -1:
-            data = os.path.join(addr_day,'Old_Data/day_samp_bin.npy')
+            data = os.path.join(addr_day,'day_samp_newer.npy')
         else:
-            data = os.path.join(addr_day,p2, 'output_bin.npy')
+            data = os.path.join(addr_day,p2, 'output_newer.npy')
         d = smio.load_sparse_csr(data)
         return d
     else:
         ratio = ratio/float(100)
         if hour == -1:
             data_pos = os.path.join(addr_day,'PosNeg/day_samp__newer_large_pos.npy')
-            data_neg = os.path.join(addr_day,'PosNeg/day_samp_newer__large_neg.npy')
+            data_neg = os.path.join(addr_day,'PosNeg/day_samp_newer_large_neg.npy')
         else:
             data_pos = os.path.join(addr_day,p2, 'output_pos_newer.npy')
             data_neg = os.path.join(addr_day,p2, 'output_neg_newer.npy')
