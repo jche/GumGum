@@ -2,7 +2,7 @@ import numpy as np
 from Get_Data import get
 # get is some method which returns samples and their labels
 import os
-from sklearn import preprocessing, metrics
+from sklearn import metrics
 import csv
 from sklearn.feature_selection import chi2, SelectKBest
 try:
@@ -47,7 +47,7 @@ def predictor(test_day, train_day):
     :return: The results to be written to the output file
     """
     X_test, y_test = data_format(test_day=test_day)
-    clf = pickle.load(open( os.path.join(train_day,"Models/SVM.p"), "rb"))
+    clf = pickle.load(open( os.path.join(train_day,"Models/NB.p"), "rb"))
     # We load in our fitted model
     y_pred = clf.predict(X_test)
     # The predicted results
