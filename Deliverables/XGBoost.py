@@ -180,7 +180,7 @@ if __name__ == "__main__":
                         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
                         wr.writerow(results)
 
-                    cut = optimal_results[1]                                        # Update the next hours cutoff
+                    cut = optimal_results[1]       # Update the next hours cutoff
             except:
                 pass
                 # Train/Test only when valid
