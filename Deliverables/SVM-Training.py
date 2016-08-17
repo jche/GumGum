@@ -72,8 +72,10 @@ for month in range(5,7):
         try:
             p1 = str(day).rjust(2,'0')
             p2 = str(day-1).rjust(2,'0')
-            test_day = os.path.join(root,p0,p1)
+            train_day = os.path.join(root,p0,p1)
+            training(train_day=train_day)
+            # Train the model
         except:
             pass
-
+            # Ensures we train only on valid days
 
