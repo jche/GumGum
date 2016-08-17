@@ -1,6 +1,11 @@
+'''
+Training an SVM model
+'''
+
 import numpy as np
 import os
-from scipy.sparse import csr_matrix
+from Get_Data import get
+# get is some method which returns samples and their labels
 from sklearn.feature_selection import chi2, SelectKBest
 from sklearn import linear_model, preprocessing
 try:
@@ -8,68 +13,67 @@ try:
 except:
     import pickle
 
-def GetData(month, day): ## Input Weiyi-formatted Data
-    root = "/mnt/rips2/2016"
-    p0 = "0" + str(month)
-    p1 = str(day).rjust(2,'0')
-    data = os.path.join(root,p0,p1,"day_samp_newer_bin.npy")
-    print "Reading Data..."
-    temp = np.load(data)
-    Data = csr_matrix(( temp['data'], temp['indices'], temp['indptr']),
-                         shape = temp['shape'], dtype=float).toarray()
-    print "Finished reading data file"
-    return Data
+def data_format(train_day):
+    """
+    Changes the labels from {0,1} to {-1,1}, performs feature selection, and scales the testing samples
+    :param train_day: The address of the day we wish to train on
+    :return: The train set and its labels, plus the number of samples, and the number of positive samples
+    """
 
+    X, y = get(addr_day=train_day)
+    n = np.size(y, 0)
+    k = np.count_nonzero(y)
+    y_test = 2*y[:,-1]-np.ones(n)
+    # We change any zeros in the label to negative ones
+    X_test = BestK.transform(X)
+    # We select the K Best features only
+    scaler.transform(X_test)
+    # We scale each feature in a standardized way
+    return X_test, y_test, n, k
 
-def DataFormat(month, day):
-    Data = GetData(month, day)
-    n = int(np.size(Data,0))
-    print "Creating X,y"
-    X = Data[:,:-1]
-    X = BestK.transform(X)
-    y = 2*Data[:,-1]-np.ones(n)
-    print "X,y created"
-    m = int(np.size(X,1))
-    print "The number of data points is %s, each with %s features" % (n, m)
-    print "Formatting ..."
-    X_scaled = scaler.transform(X)
-    K = np.count_nonzero(y+np.ones(n)) #Number of good data points
-    print "Training on %s data points" % np.size(y)
-    print "Formatted"
-    return X_scaled, y, n, K# Training set plus some numbers useful for weighting
-
-
-
-
-def TrainingModel(month, day):
+def training(train_day):
     """
     Training the model on data
-    :param month:
-    :param day:
-    :return: A trained model for Predictor (the filter) to use
+    :param train_day: The day on which we train
+    :return: A trained model for the filter to use
     """
-    X_train, y_train, n, K = DataFormat(month, day)
-    clf = linear_model.SGDClassifier(learning_rate='optimal',
-                             class_weight={-1:1, 1:2.5*n/K}, n_jobs=-1,alpha=0.000001, warm_start=True,
-                             n_iter = 10, penalty='l2', average=True, eta0=0.0625)
+    X_train, y_train, n, k = data_format(train_day)
+    clf = linear_model.SGDClassifier(learning_rate='optimal',# SGD Classifier is much faster in practice
+                             class_weight={-1:1, 1:5*n/k}, # This controls the tradeoff between filter rate and recall
+                                                             # The constant should be 5 for ~350 features, 2.5 for ~750
+                                                             # and roughly 1.5 for ~2000 features.
+                             n_jobs=-1,                      # Use all cores
+                             alpha=0.000001,
+                             warm_start=True,                # Online Learning
+                             n_iter = 10,                    # Number of iterations
+                             penalty='l2',
+                             average=True,
+                             eta0=0.0625)                    # Parameter affecting the learning rate
 
-    print "Training ... Warm Start = %s" % (True)
     clf.fit(X_train,y_train)
+    # Fit the model
+    pickle.dump(clf,open( os.path.join(train_day,"Models/SGD.p"), "wb"))
+    # Save the model
+
+
+
+for month in range(5,7):
     root = '/mnt/rips2/2016'
     p0 = "0" + str(month)
-    p1 = str(day).rjust(2,'0')
-    pickle.dump(clf,open( os.path.join(root,p0,p1,"Models/SGD.p"), "wb"))
-
-
-Data , label = GetData(6,19)[:,:-1], GetData(6, 19)[:,-1]
-BestK = SelectKBest(chi2, k = 750)
-BestK.fit(Data, label)
-Data = BestK.transform(Data)
-scaler = preprocessing.StandardScaler().fit(Data)
-for month in range(6,7):
-    for day in range(19,32):
-        TrainingModel(month, day)
-        # except:
-        #     pass
+    Data , label = get('chosen day')
+    # Here we standardise feature selection and scaling
+    BestK = SelectKBest(chi2, k = 350)
+    BestK.fit(Data, label)
+    # Feature Selection - Select K Best
+    Data = BestK.transform(Data)
+    scaler = preprocessing.StandardScaler().fit(Data)
+    # The method via which we scale the data
+    for day in range(1,32):
+        try:
+            p1 = str(day).rjust(2,'0')
+            p2 = str(day-1).rjust(2,'0')
+            test_day = os.path.join(root,p0,p1)
+        except:
+            pass
 
 

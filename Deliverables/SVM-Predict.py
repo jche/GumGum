@@ -1,3 +1,7 @@
+'''
+Predicting the results of our SVM Model
+'''
+
 import numpy as np
 from Get_Data import get
 # get is some method which returns samples and their labels
@@ -27,7 +31,7 @@ def netsav(recall, filtered):
 def data_format(test_day):
     """
     Changes the labels from {0,1} to {-1,1}, performs feature selection, and scales the testing samples
-    :param test_day: The address of the day we wish to train on
+    :param test_day: The address of the day we wish to test on
     :return: The test set and its labels
     """
 
@@ -64,34 +68,34 @@ def predictor(test_day, train_day):
 
 
 
+if __name__ == "__main__":
+    with open("/file_location/SVM-Results", "w") as output_file:
+        wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
+        # Write the results to a csv
+        wr.writerow(['Train Day', 'Test Day','Recall','Filter Rate',
+                     'Savings from infrastructure reduction','Net RTB Income Lost','Net Savings'])
+        # Heading the rows
+        for month in range(5,7):
 
-with open("/file_location/SVM-Results", "w") as output_file:
-    wr = csv.writer(output_file, quoting = csv.QUOTE_MINIMAL)
-    # Write the results to a csv
-    wr.writerow(['Train Day', 'Test Day','Recall','Filter Rate',
-                 'Savings from infrastructure reduction','Net RTB Income Lost','Net Savings'])
-    # Heading the rows
-    for month in range(5,7):
-
-        root = '/mnt/rips2/2016'
-        p0 = "0" + str(month)
-        Data , label = get('chosen day')
-        # Here we standardise feature selection and scaling
-        BestK = SelectKBest(chi2, k = 750)
-        BestK.fit(Data, label)
-        # Feature Selection - Select K Best
-        Data = BestK.transform(Data)
-        scaler = preprocessing.StandardScaler().fit(Data)
-        # The method via which we scale the data
-        for day in range(1,32):
-            try:
-                p1 = str(day).rjust(2,'0')
-                p2 = str(day-1).rjust(2,'0')
-                test_day = os.path.join(root,p0,p1)
-                train_day = os.path.join(root,p0,p2)
-                # By default we perform daily training/testing
-                result = predictor(test_day=test_day, train_day=train_day)
-                wr.writerow(result)
-            except:
-                pass
-                # Ensure only valid days are tested on
+            root = '/mnt/rips2/2016'
+            p0 = "0" + str(month)
+            Data , label = get('chosen day')
+            # Here we standardise feature selection and scaling
+            BestK = SelectKBest(chi2, k = 350)
+            BestK.fit(Data, label)
+            # Feature Selection - Select K Best
+            Data = BestK.transform(Data)
+            scaler = preprocessing.StandardScaler().fit(Data)
+            # The method via which we scale the data
+            for day in range(1,32):
+                try:
+                    p1 = str(day).rjust(2,'0')
+                    p2 = str(day-1).rjust(2,'0')
+                    test_day = os.path.join(root,p0,p1)
+                    train_day = os.path.join(root,p0,p2)
+                    # By default we perform daily training/testing
+                    result = predictor(test_day=test_day, train_day=train_day)
+                    wr.writerow(result)
+                except:
+                    pass
+                    # Ensure only valid days are tested on
