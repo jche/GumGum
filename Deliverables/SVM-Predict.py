@@ -10,7 +10,8 @@ try:
 except:
     import pickle
 
-def NetSav(recall, filtered):
+
+def netsav(recall, filtered):
     '''
     Outputs the monetary values for the model
     :param recall:
@@ -22,14 +23,15 @@ def NetSav(recall, filtered):
     NetSavings = InfrastruceReduction - IncomeLost - 5200
     return InfrastruceReduction, IncomeLost, NetSavings
 
-def DataFormat(addr_day):
+
+def data_format(test_day):
     """
     Changes the labels from {0,1} to {-1,1}, performs feature selection, and scales the testing samples
-    :param addr_day: The address of the day we wish to train on
+    :param test_day: The address of the day we wish to train on
     :return: The test set and its labels
     """
 
-    X, y = get(month, day)
+    X, y = get(addr_day=test_day)
     n = np.size(y, 0)
     y_test = 2*y[:,-1]-np.ones(n)
     # We change any zeros in the label to negative ones
@@ -40,14 +42,14 @@ def DataFormat(addr_day):
     return X_test, y_test
 
 
-def Predictor(test_day, train_day):
+def predictor(test_day, train_day):
     """
     Predicting the outcome of a bid request
     :param test_day: The address of the day we wish to test on
     :param train_day: The address of the day we wish to get the model from
     :return: The results to be written to the output file
     """
-    X_test, y_test = DataFormat(test_day)
+    X_test, y_test = data_format(test_day=test_day)
     clf = pickle.load(open( os.path.join(train_day,"Models/SVM.p"), "rb"))
     # We load in our fitted model
     y_pred = clf.predict(X_test)
@@ -56,7 +58,7 @@ def Predictor(test_day, train_day):
     n = len(y_test)
     filtered = sum(np.count_nonzero(y_pred-np.ones(n))) / float(n)
     # The filter rate is the proportion of the data we predict to be -1
-    result = [train_day, test_day, recall, filtered, NetSav(recall,filtered)]
+    result = [train_day, test_day, recall, filtered, netsav(recall,filtered)]
     # We write this as a list so that it will be on one row of the csv
     return result
 
@@ -88,7 +90,7 @@ with open("/file_location/SVM-Results", "w") as output_file:
                 test_day = os.path.join(root,p0,p1)
                 train_day = os.path.join(root,p0,p2)
                 # By default we perform daily training/testing
-                result = Predictor(test_day, train_day)
+                result = predictor(test_day=test_day, train_day=train_day)
                 wr.writerow(result)
             except:
                 pass
