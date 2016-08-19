@@ -82,7 +82,7 @@ def dynamic_cutoff(hour):
 if __name__ == "__main__":
     for month in range(6, 7):
         for day in range(4, 26):
-            for hour in range(0, 24):
+            for hour in range(12, 24):
                 bst = train_model(month, day, hour)   # C_i-1
                 if hour == 23:
                     dtest, test_label = process_data(month, day+1, 0)
@@ -90,6 +90,12 @@ if __name__ == "__main__":
                     dtest, test_label = process_data(month, day, hour+1)
 
                 pred_prop = bst.predict(dtest)
+                print "Maximum predicted probability is %s" % max(pred_prop)
+                print "Minimum predicted probability is %s" % min(pred_prop)
+                print "Average predicted probability is %s" % np.mean(pred_prop)
+                print "First Quartile is %s" % np.percentile(pred_prop, 25)
+                print "Median is %s" % np.percentile(pred_prop, 50)
+                print "Third Quartile is %s" % np.percentile(pred_prop, 75)
                 # cut = dynamic_cutoff(hour)
                 cut = 0.10
                 pred = pred_prop > cut
