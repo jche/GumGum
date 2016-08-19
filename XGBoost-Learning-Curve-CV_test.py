@@ -17,7 +17,20 @@ def get_data(month, day):
     addr_in = os.path.join(root,
                            str(month).rjust(2, "0"),
                            str(day).rjust(2, "0"),
-                           "day_samp_large_newer.npy")
+                           "day_samp_new_large.npy")
+    with open(addr_in, "r") as file_in:
+        loader = np.load(file_in)
+        data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
+    y = data[:,-1].toarray()
+    X = data[:, :-1]
+    return X, y
+
+def get_data2(month, day):
+    root = "/mnt/rips2/2016/random_samples"
+    addr_in = os.path.join(root,
+                           str(month).rjust(2, "0"),
+                           str(day).rjust(2, "0"),
+                           "day_samp_new_large2.npy")
     with open(addr_in, "r") as file_in:
         loader = np.load(file_in)
         data = csr_matrix((loader['data'], loader['indices'], loader['indptr']), shape=loader['shape'])
@@ -29,7 +42,7 @@ def get_data(month, day):
 
 def train(param, num_round, theta):
     X_train, y_train = get_data(data[0], data[1])
-    k = int(theta*1000000)
+    k = int(theta*500000)
     X_train, y_train = X_train[:k,:], y_train[:k]
     X_train, y_train = X_train[train_index], y_train[train_index]
     data_train = xgb.DMatrix(X_train, label=y_train)
@@ -44,6 +57,16 @@ def test(bst, theta, j):
         X_test, y_test = X_test[test_index], y_test[test_index]
     data_test = xgb.DMatrix(X_test, label=y_test)
     return search_cut(bst.predict(data_test), y_test)
+
+def testNotCV(bst, theta, j, dacut):
+    X_test, y_test = get_data2(data[0], data[1]+j)
+    nn = len(y_test)
+    k = int(theta*nn)
+    X_test, y_test = X_test[:k], y_test[:k]
+    if j == 0:
+        X_test, y_test = X_test[test_index], y_test[test_index]
+    data_test = xgb.DMatrix(X_test, label=y_test)
+    return getScores(bst.predict(data_test), y_test,dacut)
 
 
 def create_feature_map(features):
@@ -75,6 +98,18 @@ def search_cut(prob, y_test):
     return [score, recall_best, filter_rate_best, cut_best, net_savings_best]
 
 
+def getScores(prob, y_test, dacut):
+    cut = dacut
+    y_pred = prob > cut   # If y values are greater than the cutoff
+    recall = metrics.recall_score(y_test, y_pred)
+    filter_rate = sum(np.logical_not(y_pred))/float(len(prob))
+    score = recall*6.7+filter_rate
+    recall_best = recall
+    filter_rate_best = filter_rate
+    net_savings_best = -5200+127000*filter_rate-850000*(1-recall)
+    cut_best = dacut
+    return [score, recall_best, filter_rate_best, cut_best, net_savings_best]
+
 
 if __name__ == "__main__":
     # importance = pickle.load(open('/home/kbhalla/Desktop/pickle/features.p','rb'))
@@ -83,12 +118,13 @@ if __name__ == "__main__":
     # for key in importance:
     #     if key[1] > 0:
     #         s.append(key[0][1:])
-    with open('/home/ubuntu/Krishan/Results/XGB-Learning-Curve-CV-MoreData.csv', 'w') as file:
+    with open('/home/ubuntu/Krishan/Results/XGB-Learning-Curve-CV_test.csv', 'w') as file:
         # Inputting training and testing set
         wr = csv.writer(file, quoting = csv.QUOTE_MINIMAL)
         data = (6, 19)
+        wr.writerow(['score', 'recall_best', 'filter_rate_best', 'cut_best', 'net_savings_best','', '', '', '',''])
         for theta in np.linspace(0.01, 1, 100):
-            kf = KFold(int(1000000*theta), n_folds=3, shuffle=True)
+            kf = KFold(int(500000*theta), n_folds=3, shuffle=True)
             results = [0]*11
             # Setting parameters
             i = 1
@@ -122,10 +158,12 @@ if __name__ == "__main__":
                 print "Testing"
                 results_test = test(bst, 1, 1)
                 print "Done Testing"
+                cutt = results_test[3]
+                results_testNotCV = testNotCV(bst, 1, 1, cutt)
                 print "------------------"
                 print theta
                 print "------------------"
-                temp = results_train+results_test+[theta]
+                temp = results_train+results_test+results_testNotCV+[theta]
                 print temp
                 print "Finished fold %s" % i
                 i += 1
